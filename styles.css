@@ -265,6 +265,92 @@ main {
   line-height: 1.6;
 }
 
+/* ============ Selected Work ============ */
+.work-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  max-width: var(--page);
+}
+.work-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px 28px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 200ms ease, transform 200ms ease, box-shadow 200ms ease;
+}
+.work-card:hover {
+  border-color: var(--border-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(10, 10, 10, 0.04);
+}
+.work-folio {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.work-title {
+  font-size: 1.18rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  margin: 0;
+  color: var(--ink);
+}
+.work-desc {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+.work-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 6px;
+}
+.work-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+  transition: background 160ms ease, color 160ms ease, transform 120ms ease, border-color 160ms ease;
+}
+.work-link:hover {
+  background: transparent;
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+.work-link.is-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--border-strong);
+}
+.work-link.is-ghost:hover {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+.work-link .arrow {
+  font-weight: 500;
+  display: inline-block;
+  transition: transform 160ms ease;
+}
+.work-link:hover .arrow { transform: translate(1px, -1px); }
+
 /* ============ Prose ============ */
 .prose {
   max-width: var(--reading);
@@ -417,7 +503,7 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
   html { scroll-behavior: auto; }
-  .impact-entry:hover, .topic:hover, .link-cta:hover { transform: none; }
+  .impact-entry:hover, .topic:hover, .link-cta:hover, .work-card:hover, .work-link:hover { transform: none; }
 }
 
 /* ============ Footer ============ */
@@ -437,7 +523,8 @@ main {
 /* ============ Responsive ============ */
 @media (max-width: 860px) {
   .impact-list,
-  .topic-list {
+  .topic-list,
+  .work-grid {
     grid-template-columns: 1fr;
   }
 }

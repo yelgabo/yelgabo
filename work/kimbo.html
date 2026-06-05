@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kimbo — Case Study · Yelnil Gabo</title>
+  <meta name="description" content="Kimbo — an endless browser Tetris with a global leaderboard and per-score replays, built on a zero-dependency, stdlib-only Python backend over SQLite." />
+  <meta name="theme-color" content="#fafaf9" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://yelgabo.com/work/kimbo.html" />
+  <meta property="og:title" content="Kimbo — Case Study · Yelnil Gabo" />
+  <meta property="og:description" content="Endless browser Tetris with a global leaderboard and per-score replays. Zero dependencies, stdlib-only Python backend." />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0a'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' font-family='-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif' font-weight='800' font-size='30' fill='%23fafaf9' letter-spacing='-1'%3Eyg%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+<body class="proj-kimbo" style="--proj:#b3122d">
+  <header class="subnav">
+    <div class="subnav__inner">
+      <a class="subnav__back" href="../index.html#work"><span class="arrow" aria-hidden="true">&larr;</span> All work</a>
+      <span class="subnav__proj"><span class="subnav__dot" aria-hidden="true"></span> Kimbo</span>
+    </div>
+  </header>
+
+  <main class="case">
+    <section class="case-hero">
+      <span class="case-hero__folio">01</span>
+      <p class="case-hero__kicker">Game &middot; Python &middot; SQLite</p>
+      <h1 class="case-hero__title">Kimbo</h1>
+      <p class="case-hero__tagline">Endless browser Tetris with a global leaderboard and per-score replays.</p>
+      <div class="cta-row">
+        <a class="link-cta" href="https://kimbo-production.up.railway.app" target="_blank" rel="noopener">Play it live <span class="arrow" aria-hidden="true">&#8599;</span></a>
+        <a class="link-cta is-ghost" href="https://github.com/yelgabo/kimbo" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+      </div>
+    </section>
+
+    <div class="meta-strip">
+      <div class="meta-strip__field"><span class="meta-strip__k">Role</span><span class="meta-strip__v">Solo &mdash; design &amp; build</span></div>
+      <div class="meta-strip__field"><span class="meta-strip__k">Year</span><span class="meta-strip__v">2026</span></div>
+      <div class="meta-strip__field"><span class="meta-strip__k">Stack</span><span class="meta-strip__v">Python &middot; SQLite</span></div>
+      <div class="meta-strip__field"><span class="meta-strip__k">Status</span><span class="meta-strip__v is-accent">Live</span></div>
+    </div>
+
+    <figure class="figure">
+      <div class="browser-frame browser-frame--dark">
+        <div class="browser-frame__bar">
+          <span class="browser-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="browser-frame__url">kimbo.up.railway.app</span>
+        </div>
+        <img class="browser-frame__img" style="--obj: left top" src="../assets/projects/kimbo.webp" width="1600" height="1000" decoding="async" alt="Kimbo's dark editorial board and live leaderboard" />
+      </div>
+      <figcaption class="figure__caption">The endless-mode board, score panel, and live global leaderboard.</figcaption>
+    </figure>
+
+    <section class="case-section">
+      <p class="case-kicker">01 Problem</p>
+      <div class="case-prose">
+        <p>I wanted a small, fast game I could ship without a build pipeline or a pile of dependencies &mdash; something that loads instantly, runs anywhere, and still has the social hook of a shared leaderboard. Most web games drag in heavy engines and bundlers; I wanted to see how far plain HTML, CSS, and vanilla JavaScript could go, backed by a server I could read top to bottom in one sitting.</p>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <p class="case-kicker">02 Approach</p>
+      <div class="case-prose">
+        <p>The frontend is hand-written HTML, CSS, and vanilla JS &mdash; no framework, no build step, nothing to compile. The backend is a single <strong>stdlib-only Python server</strong> (no Flask, no third-party packages) that persists scores and replays to SQLite.</p>
+        <p>Every game records its input sequence, so each score links to a <strong>deterministic replay</strong> anyone can watch &mdash; the same inputs always reproduce the same board. The whole thing deploys to Railway straight from the repo with no build configuration.</p>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <p class="case-kicker">03 Tech stack</p>
+      <div class="stack-group">
+        <p class="stack-group__label">Frontend</p>
+        <div class="stack-chips"><span class="chip">HTML</span><span class="chip">CSS</span><span class="chip">Vanilla JS</span><span class="chip">Canvas</span></div>
+      </div>
+      <div class="stack-group">
+        <p class="stack-group__label">Backend</p>
+        <div class="stack-chips"><span class="chip">Python (stdlib)</span><span class="chip">SQLite</span></div>
+      </div>
+      <div class="stack-group">
+        <p class="stack-group__label">Infrastructure</p>
+        <div class="stack-chips"><span class="chip">Railway</span></div>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <p class="case-kicker">04 Outcome</p>
+      <div class="stat-cards">
+        <div class="stat-card"><p class="stat-card__n">0</p><p class="stat-card__l">build dependencies &mdash; no bundler, no npm packages</p></div>
+        <div class="stat-card"><p class="stat-card__n">1 file</p><p class="stat-card__l">stdlib-only Python backend you can read end to end</p></div>
+      </div>
+      <div class="case-prose" style="margin-top:24px">
+        <p>It's live and playable, with a shared leaderboard and replays. The constraint &mdash; zero dependencies &mdash; turned out to be the feature: the project stays trivially deployable and the entire stack fits in your head.</p>
+      </div>
+    </section>
+
+    <nav class="case-nav" aria-label="More projects">
+      <a class="case-nav__prev" href="claude-sync.html"><span class="case-nav__dir">&larr; Previous</span><span class="case-nav__name">Claude Sync</span></a>
+      <a class="case-nav__next" href="job-fraud.html"><span class="case-nav__dir">Next &rarr;</span><span class="case-nav__name">Job Fraud Scanner</span></a>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="year">2026</span> Yelnil Gabo &middot; yelgabo.com</p>
+  </footer>
+
+  <script>
+    (function () {
+      var y = document.getElementById('year');
+      if (y) y.textContent = String(new Date().getFullYear());
+    })();
+  </script>
+</body>
+</html>

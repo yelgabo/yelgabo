@@ -106,51 +106,114 @@
     </section>
 
     <section id="work" class="section" aria-labelledby="work-title">
-      <header class="section-head">
+      <header class="section-head work-intro">
         <p class="section-kicker">Projects</p>
         <h2 id="work-title" class="section-title">Selected Work</h2>
+        <p class="work-lead">Four things I designed, built, and shipped end to end on my own time &mdash; from a dependency-free game server to an end-to-end-encrypted sync product.</p>
       </header>
+      <hr class="work-rule" />
 
-      <div class="work-grid">
-        <article class="work-card reveal">
-          <p class="work-folio">01 &mdash; Game</p>
-          <h3 class="work-title">kimbo</h3>
-          <p class="work-desc">An endless browser Tetris with a shared global leaderboard and per-score replays. Static frontend, stdlib-only Python backend, SQLite storage&mdash;no build step, no JavaScript dependencies.</p>
-          <div class="work-links">
-            <a class="work-link" href="https://kimbo-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
-            <a class="work-link is-ghost" href="https://github.com/yelgabo/kimbo" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+      <div class="features">
+
+        <article class="feature" style="--proj:#b3122d">
+          <div class="feature__media reveal">
+            <figure class="browser-frame browser-frame--dark">
+              <div class="browser-frame__bar">
+                <span class="browser-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="browser-frame__url">kimbo.up.railway.app</span>
+              </div>
+              <img class="browser-frame__img" style="--obj: left top" src="assets/projects/kimbo.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="Kimbo &mdash; dark editorial browser Tetris UI with leaderboard" />
+            </figure>
+          </div>
+          <div class="feature__text reveal">
+            <span class="feature__folio">01</span>
+            <p class="feature__kicker">Game &middot; Python &middot; SQLite</p>
+            <h3 class="feature__title">Kimbo</h3>
+            <p class="feature__tagline">Endless browser Tetris with a global leaderboard.</p>
+            <p class="feature__blurb">A no-build, zero-dependency take on Tetris: shared high scores and per-score replays, served by a stdlib-only Python backend over SQLite.</p>
+            <p class="feature__spec"><span>Solo build</span><span>Python &middot; SQLite</span><span>Live</span></p>
+            <a class="feature__cta" href="work/kimbo.html">View case study <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <span class="feature__links">
+              <a class="link-cta" href="https://kimbo-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
+              <a class="link-cta is-ghost" href="https://github.com/yelgabo/kimbo" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+            </span>
           </div>
         </article>
 
-        <article class="work-card reveal">
-          <p class="work-folio">02 &mdash; Trust &amp; Safety</p>
-          <h3 class="work-title">Job Fraud Scanner</h3>
-          <p class="work-desc">An automated review of software and tech job postings on WorkBC&mdash;British Columbia's public job board&mdash;scoring each on whether it looks like a genuine attempt to hire locally, or a posting that exists for other reasons. Includes brand-impersonation detection and a full audit trail.</p>
-          <div class="work-links">
-            <a class="work-link" href="https://job-fraud-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
-            <a class="work-link is-ghost" href="https://github.com/yelgabo/job-fraud" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+        <article class="feature" style="--proj:#2563eb">
+          <div class="feature__media reveal">
+            <figure class="browser-frame browser-frame--wide">
+              <div class="browser-frame__bar">
+                <span class="browser-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="browser-frame__url">job-fraud.up.railway.app</span>
+              </div>
+              <img class="browser-frame__img" style="--obj: center top" src="assets/projects/job-fraud.webp" width="1600" height="900" loading="lazy" decoding="async" alt="Job Fraud Scanner &mdash; scored job postings with risk badges and flags" />
+            </figure>
+          </div>
+          <div class="feature__text reveal">
+            <span class="feature__folio">02</span>
+            <p class="feature__kicker">Scanner &middot; LLM &middot; Audit</p>
+            <h3 class="feature__title">Job Fraud Scanner</h3>
+            <p class="feature__tagline">Which BC tech job posts are real &mdash; and which aren't?</p>
+            <p class="feature__blurb">Scores every software posting on WorkBC for genuine local-hire intent, with brand-impersonation detection and a per-posting audit trail. 3,460 postings scored.</p>
+            <p class="feature__spec"><span>Solo build</span><span>Next.js &middot; Postgres &middot; Claude</span><span>Live</span></p>
+            <a class="feature__cta" href="work/job-fraud.html">View case study <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <span class="feature__links">
+              <a class="link-cta" href="https://job-fraud-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
+              <a class="link-cta is-ghost" href="https://github.com/yelgabo/job-fraud" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+            </span>
           </div>
         </article>
 
-        <article class="work-card reveal">
-          <p class="work-folio">03 &mdash; Learning Tool</p>
-          <h3 class="work-title">anki-srs</h3>
-          <p class="work-desc">Spaced repetition (SM-2) for a curated set of LeetCode and system-design problems&mdash;turning interview prep into a daily review habit instead of a last-minute cram. Tracks recall strength per problem and schedules the next review automatically.</p>
-          <div class="work-links">
-            <a class="work-link" href="https://anki-srs-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
-            <a class="work-link is-ghost" href="https://github.com/yelgabo/anki-srs" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+        <article class="feature" style="--proj:#16a34a">
+          <div class="feature__media reveal">
+            <figure class="browser-frame">
+              <div class="browser-frame__bar">
+                <span class="browser-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="browser-frame__url">anki-srs.up.railway.app</span>
+              </div>
+              <img class="browser-frame__img" style="--obj: left top" src="assets/projects/anki-srs.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="anki-srs &mdash; spaced repetition for coding interview problems" />
+            </figure>
+          </div>
+          <div class="feature__text reveal">
+            <span class="feature__folio">03</span>
+            <p class="feature__kicker">Learning &middot; SM-2 &middot; Web</p>
+            <h3 class="feature__title">anki-srs</h3>
+            <p class="feature__tagline">Spaced repetition for coding-interview problems.</p>
+            <p class="feature__blurb">151 NeetCode problems scheduled with the SM-2 algorithm &mdash; daily streaks with auto-freezes, keyboard shortcuts, and a layout that works on your phone on the train.</p>
+            <p class="feature__spec"><span>Solo build</span><span>Next.js &middot; Postgres &middot; Auth.js</span><span>Live</span></p>
+            <a class="feature__cta" href="work/anki-srs.html">View case study <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <span class="feature__links">
+              <a class="link-cta" href="https://anki-srs-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
+              <a class="link-cta is-ghost" href="https://github.com/yelgabo/anki-srs" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+            </span>
           </div>
         </article>
 
-        <article class="work-card reveal">
-          <p class="work-folio">04 &mdash; Developer Tool</p>
-          <h3 class="work-title">Claude Sync</h3>
-          <p class="work-desc">End-to-end encrypted sync for your Claude Code setup&mdash;skills, commands, agents, and memory follow you to every machine. Native desktop apps for Windows and macOS, plus a read-only web client to browse and diff your files from any browser.</p>
-          <div class="work-links">
-            <a class="work-link" href="https://claude-sync-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
-            <a class="work-link is-ghost" href="https://github.com/yelgabo/claude-sync" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+        <article class="feature" style="--proj:#4f46e5">
+          <div class="feature__media reveal">
+            <figure class="browser-frame browser-frame--poster">
+              <div class="poster">
+                <img src="assets/projects/claude-sync-icon.webp" width="104" height="104" loading="lazy" decoding="async" alt="Claude Sync app icon" />
+                <p class="poster__cap">end-to-end encrypted &middot; Windows + macOS &middot; read-only web</p>
+              </div>
+            </figure>
+          </div>
+          <div class="feature__text reveal">
+            <span class="feature__folio">04</span>
+            <p class="feature__kicker">Product &middot; E2E Crypto &middot; Electron</p>
+            <h3 class="feature__title">Claude Sync</h3>
+            <p class="feature__tagline">Get the same Claude on every computer.</p>
+            <p class="feature__blurb">End-to-end encrypted sync for your Claude Code setup &mdash; skills, commands, agents, and memory follow you to every machine. Native desktop apps for Windows &amp; macOS, plus a read-only web client.</p>
+            <p class="feature__spec"><span>Solo build</span><span>TypeScript &middot; Fastify &middot; Electron</span><span>Released</span></p>
+            <a class="feature__cta" href="work/claude-sync.html">View case study <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <span class="feature__links">
+              <a class="link-cta" href="https://claude-sync-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
+              <a class="link-cta is-ghost" href="https://github.com/yelgabo/claude-sync" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+            </span>
           </div>
         </article>
+
       </div>
     </section>
 

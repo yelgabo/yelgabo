@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Interview Prep Part 2 — Iterators, Moves, Smart Pointers, Concurrency</title>
+<style>
+  :root {
+    --paper: #f7f8fa;
+    --ink: #1a1f2b;
+    --ink-soft: #4a5468;
+    --accent: #00599c;
+    --accent-soft: #e3eef7;
+    --trap-bg: #fdf3e3;
+    --trap-border: #d9932c;
+    --trap-ink: #9a6414;
+    --quote-bg: #eef3f8;
+    --code-bg: #232733;
+    --code-ink: #e8eaf0;
+    --kw: #7aa2f7;
+    --str: #9ece6a;
+    --com: #6b7089;
+    --type: #e0af68;
+    --rule: #d8dce4;
+    --card: #ffffff;
+  }
+  :root[data-theme="dark"] {
+    --paper: #14161c;
+    --ink: #e8eaf0;
+    --ink-soft: #9aa3b8;
+    --accent: #5b9fd8;
+    --accent-soft: #14283c;
+    --trap-bg: #2a2113;
+    --trap-ink: #e6b45e;
+    --quote-bg: #16222e;
+    --code-bg: #1b1e28;
+    --rule: #2b303c;
+    --card: #1c1f28;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px 80px; }
+  header.masthead { border-bottom: 3px solid var(--ink); padding: 48px 0 24px; margin-bottom: 8px; }
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 10px;
+  }
+  h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.15; margin: 0 0 12px; font-weight: 800; letter-spacing: -0.02em; }
+  .subtitle { color: var(--ink-soft); margin: 0; max-width: 62ch; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; font-size: 14px; color: var(--ink-soft); }
+  nav.toc { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 18px 22px; margin: 24px 0 40px; }
+  nav.toc p { margin: 0 0 8px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+  nav.toc ol { margin: 0; padding: 0 0 0 1.4em; font-size: 14.5px; }
+  nav.toc li { margin: 3px 0; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+  section { margin-top: 56px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; margin: 0 0 4px; padding-top: 8px; }
+  h2 .num { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--accent); font-weight: 700; margin-right: 10px; }
+  h2::after { content: ""; display: block; width: 56px; height: 3px; background: var(--accent); margin-top: 8px; }
+  h3 { font-size: 18px; margin: 28px 0 6px; }
+  p { margin: 12px 0; }
+  ul, ol { padding-left: 1.3em; }
+  li { margin: 6px 0; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.88em; background: var(--accent-soft); color: var(--ink); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.55; margin: 16px 0; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  .kw { color: var(--kw); } .str { color: var(--str); } .com { color: var(--com); font-style: italic; } .typ { color: var(--type); }
+  .trap { background: var(--trap-bg); border-left: 4px solid var(--trap-border); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 18px 0; }
+  .trap .tag { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--trap-ink); display: block; margin-bottom: 4px; }
+  .trap p:first-of-type { margin-top: 0; } .trap p:last-child { margin-bottom: 0; }
+  .oneliner { background: var(--quote-bg); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 18px 0; font-style: italic; }
+  .oneliner .tag { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; font-style: normal; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--rule); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding-left: 28px; position: relative; }
+  .checklist li::before { content: "☐"; position: absolute; left: 4px; color: var(--accent); font-size: 15px; }
+  .backtop { display: block; margin-top: 28px; font-size: 13px; }
+  .backtop a { color: var(--ink-soft); text-decoration: none; }
+  .backtop a:hover { color: var(--accent); }
+  .theme-toggle { position: fixed; top: 14px; right: 14px; z-index: 10; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--rule); background: var(--card); color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  @media print {
+    body { background: #fff; font-size: 12px; }
+    pre { white-space: pre-wrap; }
+    nav.toc, .backtop, .theme-toggle { display: none; }
+    section { margin-top: 28px; }
+  }
+</style>
+<script>
+(function () {
+  var t = null;
+  try { t = localStorage.getItem('theme'); } catch (e) {}
+  if (t !== 'dark' && t !== 'light') {
+    t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  document.documentElement.dataset.theme = t;
+})();
+function updateThemeBtn() {
+  var b = document.getElementById('themeBtn');
+  if (b) b.textContent = document.documentElement.dataset.theme === 'dark' ? '\u2600' : '\u263E';
+}
+function toggleTheme() {
+  var r = document.documentElement;
+  r.dataset.theme = (r.dataset.theme === 'dark') ? 'light' : 'dark';
+  try { localStorage.setItem('theme', r.dataset.theme); } catch (e) {}
+  updateThemeBtn();
+}
+</script>
+</head>
+<body>
+<button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle dark mode">&#9790;</button>
+<script>updateThemeBtn();</script>
+<div class="wrap">
+
+<header class="masthead" id="top">
+  <p class="eyebrow">C++ Interview Prep · Part 2</p>
+  <h1>Iterators, Moves, Smart Pointers, Concurrency</h1>
+  <p class="subtitle">The four highest-yield topics after virtual functions. Taught from scratch, traps marked ⚠️, one-liners marked 💬.</p>
+  <div class="legend"><span>⚠️ interview trap</span><span>💬 one-liner worth saying verbatim</span></div>
+</header>
+
+<nav class="toc">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#s1">Iterator Invalidation</a></li>
+    <li><a href="#s2">Move Semantics</a></li>
+    <li><a href="#s3">Smart Pointer Internals</a></li>
+    <li><a href="#s4">Concurrency Basics</a></li>
+    <li><a href="#s5">Combined Cheat Sheet</a></li>
+  </ol>
+</nav>
+
+<!-- ==================== 1 ==================== -->
+<section id="s1">
+  <h2><span class="num">01</span>Iterator Invalidation</h2>
+  <p>An iterator, pointer, or reference into a container is a promise that a particular element sits at a particular place. Container operations can break that promise — and using a broken one is <strong>undefined behavior (UB)</strong>, not an exception, not a null check. It often "works" in testing and corrupts memory in production. Interviewers probe this because it's the easiest live-coding bug to write.</p>
+
+  <h3>Why each container invalidates — from memory layout</h3>
+  <p>You already know the layouts, so the rules derive rather than memorize:</p>
+  <ul>
+    <li><code>vector</code>: one contiguous block. When it grows past capacity it <strong>reallocates</strong> — new block, elements moved, old block freed. Every iterator/pointer/reference into the old block now dangles. Insert/erase in the middle also <em>shifts</em> everything after the point.</li>
+    <li><code>list</code>/<code>map</code>/<code>set</code>: node-based. Elements never move; only the erased node's memory goes away.</li>
+    <li><code>unordered_map</code>/<code>unordered_set</code>: node-based buckets, but growth triggers a <strong>rehash</strong> — nodes get re-distributed among new buckets. Iterators (which walk buckets) break; pointers/references to elements (the nodes themselves didn't move) survive.</li>
+    <li><code>deque</code>: chunked blocks + an index map. Push at either end keeps existing elements in place (references survive) but rebuilds the index (iterators break). Insert/erase in the middle breaks everything.</li>
+  </ul>
+
+  <h3>The table (know this cold)</h3>
+  <table>
+    <tr><th>Container / operation</th><th>Iterators</th><th>Pointers &amp; references</th></tr>
+    <tr><td><code>vector</code> push_back, no reallocation</td><td>valid (except <code>end()</code>)</td><td>valid</td></tr>
+    <tr><td><code>vector</code> push_back with reallocation</td><td><strong>ALL invalid</strong></td><td><strong>ALL invalid</strong></td></tr>
+    <tr><td><code>vector</code> insert/erase at position p</td><td>invalid from p onward</td><td>invalid from p onward</td></tr>
+    <tr><td><code>deque</code> push_front / push_back</td><td><strong>all invalid</strong></td><td>valid ⚠️</td></tr>
+    <tr><td><code>deque</code> insert/erase in middle</td><td>all invalid</td><td>all invalid</td></tr>
+    <tr><td><code>list</code> insert</td><td>valid</td><td>valid</td></tr>
+    <tr><td><code>list</code>/<code>map</code>/<code>set</code> erase</td><td>only the erased one</td><td>only the erased one</td></tr>
+    <tr><td><code>map</code>/<code>set</code> insert</td><td>valid</td><td>valid</td></tr>
+    <tr><td><code>unordered_*</code> insert causing rehash</td><td><strong>all invalid</strong></td><td>valid ⚠️</td></tr>
+    <tr><td><code>unordered_*</code> insert, no rehash</td><td>valid</td><td>valid</td></tr>
+    <tr><td><code>unordered_*</code> erase</td><td>only the erased one</td><td>only the erased one</td></tr>
+  </table>
+  <p>The two ⚠️ rows are the interview favorites: operations where iterators die but references survive. Being able to explain <em>why</em> (index rebuilt / rehash, but nodes stayed put) is the senior answer.</p>
+
+  <h3>The classic bugs</h3>
+<pre><code><span class="com">// Bug 1: reference held across push_back</span>
+std::vector&lt;<span class="kw">int</span>&gt; v = {<span class="str">1</span>, <span class="str">2</span>, <span class="str">3</span>};
+<span class="kw">int</span>&amp; first = v[<span class="str">0</span>];
+v.push_back(<span class="str">4</span>);        <span class="com">// may reallocate</span>
+first = <span class="str">99</span>;            <span class="com">// UB if it did — writes to freed memory</span>
+
+<span class="com">// Bug 2: self-referential push_back</span>
+v.push_back(v[<span class="str">0</span>]);     <span class="com">// UB if reallocation happens mid-call?</span>
+<span class="com">// Actually SAFE — the standard requires push_back to cope. But</span>
+<span class="com">// v.insert(v.begin(), v[0]) style patterns are where people get burned;</span>
+<span class="com">// know that the safe-ness is subtle and version it in an interview.</span>
+
+<span class="com">// Bug 3: erasing inside a range-for</span>
+<span class="kw">for</span> (<span class="kw">int</span> x : v)
+    <span class="kw">if</span> (x % <span class="str">2</span> == <span class="str">0</span>) v.erase(...);  <span class="com">// UB — range-for holds iterators</span></code></pre>
+
+  <h3>Erasing correctly, per container</h3>
+<pre><code><span class="com">// vector / deque: erase returns the next valid iterator</span>
+<span class="kw">for</span> (<span class="kw">auto</span> it = v.begin(); it != v.end(); ) {
+    <span class="kw">if</span> (bad(*it)) it = v.erase(it);   <span class="com">// reseat from return value</span>
+    <span class="kw">else</span>          ++it;
+}
+
+<span class="com">// vector, erasing many: erase-remove idiom (single O(n) pass)</span>
+v.erase(std::remove_if(v.begin(), v.end(), bad), v.end());
+
+<span class="com">// C++20: same thing, one call</span>
+std::erase_if(v, bad);
+
+<span class="com">// map / set / unordered_*: same reseat pattern works (C++11 erase returns next)</span>
+<span class="kw">for</span> (<span class="kw">auto</span> it = m.begin(); it != m.end(); )
+    it = bad(*it) ? m.erase(it) : std::next(it);</code></pre>
+
+  <div class="trap"><span class="tag">⚠️ Trap — capacity vs size</span>
+  <p><code>reserve(n)</code> pre-allocates capacity so subsequent push_backs won't reallocate (pointers stay valid up to n elements) — it does <strong>not</strong> change <code>size()</code>. <code>resize(n)</code> changes size. If you know the element count up front, <code>reserve</code> is both a performance win and an invalidation guarantee — say that in interviews. Growth is geometric (factor ~1.5–2×), which is what makes push_back <em>amortized</em> O(1).</p></div>
+
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"Contiguous containers invalidate by moving elements; node containers invalidate only what's erased; hashed containers sit in between — rehash kills iterators but nodes don't move, so references survive."<br><br>"Using an invalidated iterator is UB, not an error you can catch."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 2 ==================== -->
+<section id="s2">
+  <h2><span class="num">02</span>Move Semantics</h2>
+
+  <h3>The problem moves solve</h3>
+  <p>Copying a <code>vector&lt;string&gt;</code> means allocating and copying every buffer. But if the source is a <strong>temporary about to die</strong>, copying is waste — you could just steal its buffers. Move semantics is the language machinery for "steal, don't copy, when the source won't need it."</p>
+
+  <h3>Value categories (the 60-second version)</h3>
+  <ul>
+    <li><strong>lvalue</strong> — has a name/identity, you can take its address: variables, members, <code>*p</code>. Might be used again → not safe to steal from.</li>
+    <li><strong>prvalue</strong> — a pure temporary: <code>f()</code> returning by value, <code>x + y</code>, literals. Dying at the semicolon → safe to steal.</li>
+    <li><strong>xvalue</strong> — an "expiring" lvalue: something with identity that you've <em>declared</em> done with, i.e. <code>std::move(x)</code>.</li>
+  </ul>
+  <p>rvalue = prvalue or xvalue. An <strong>rvalue reference</strong> <code>T&amp;&amp;</code> binds only to rvalues — that's how a function can offer a separate overload for "sources you may gut":</p>
+<pre><code><span class="kw">void</span> take(<span class="kw">const</span> std::string&amp; s);  <span class="com">// binds to everything (copies)</span>
+<span class="kw">void</span> take(std::string&amp;&amp; s);        <span class="com">// binds to rvalues only (steals)</span>
+
+std::string name = <span class="str">"yel"</span>;
+take(name);             <span class="com">// lvalue → const&amp; overload</span>
+take(name + <span class="str">"!"</span>);       <span class="com">// prvalue → &amp;&amp; overload</span>
+take(std::move(name));  <span class="com">// xvalue  → &amp;&amp; overload</span></code></pre>
+
+  <div class="trap"><span class="tag">⚠️ Trap — std::move moves nothing</span>
+  <p><code>std::move(x)</code> is a <strong>cast</strong> to <code>T&amp;&amp;</code> — zero runtime work. It's a label saying "treat x as stealable." The actual stealing happens only if something (a move constructor, a move assignment, the <code>&amp;&amp;</code> overload) accepts the invitation. <code>std::move</code> on a <code>const</code> object silently <strong>copies</strong> — the move ctor takes <code>T&amp;&amp;</code>, a <code>const T&amp;&amp;</code> won't bind to it, and overload resolution falls back to the copy ctor. No warning. Classic quiz question.</p></div>
+
+  <h3>Writing move operations</h3>
+<pre><code><span class="kw">class</span> <span class="typ">Buffer</span> {
+    <span class="kw">char</span>* data_ = <span class="kw">nullptr</span>;
+    size_t n_ = <span class="str">0</span>;
+<span class="kw">public</span>:
+    Buffer(Buffer&amp;&amp; o) <span class="kw">noexcept</span>
+        : data_(std::exchange(o.data_, <span class="kw">nullptr</span>)),  <span class="com">// steal + null the source</span>
+          n_(std::exchange(o.n_, <span class="str">0</span>)) {}
+
+    Buffer&amp; <span class="kw">operator</span>=(Buffer&amp;&amp; o) <span class="kw">noexcept</span> {
+        <span class="kw">if</span> (<span class="kw">this</span> != &amp;o) {
+            <span class="kw">delete</span>[] data_;
+            data_ = std::exchange(o.data_, <span class="kw">nullptr</span>);
+            n_    = std::exchange(o.n_, <span class="str">0</span>);
+        }
+        <span class="kw">return</span> *<span class="kw">this</span>;
+    }
+};</code></pre>
+  <ul>
+    <li>Inside the move ctor, <code>o</code> is an <strong>lvalue</strong> (it has a name!) — so moving members needs <code>std::move(o.member)</code> or <code>std::exchange</code>. Forgetting this silently copies. ⚠️</li>
+    <li>Leave the source <strong>valid but unspecified</strong>: destructible and assignable. Nulling pointers achieves that.</li>
+    <li>Mark moves <code>noexcept</code>. <code>vector</code> reallocation moves elements <em>only if</em> the move ctor is noexcept — otherwise it copies, to preserve the strong exception guarantee (<code>std::move_if_noexcept</code>). A non-noexcept move can silently make your vector O(n) copies on every growth. ⚠️</li>
+    <li>Compiler generates move ops only if you declare <strong>no</strong> copy ops, no destructor, no other move op. Declaring a destructor — even <code>= default</code> — suppresses implicit moves. Rule of Five / Rule of Zero.</li>
+  </ul>
+
+  <h3>RVO and copy elision</h3>
+<pre><code>std::string make() {
+    std::string s = <span class="str">"long string ..."</span>;
+    <span class="kw">return</span> s;                 <span class="com">// NRVO: usually constructed in place, zero copies/moves</span>
+    <span class="com">// return std::move(s);   // PESSIMIZATION — disables NRVO, forces a move</span>
+}</code></pre>
+  <ul>
+    <li><strong>RVO</strong> (return value optimization): returning a prvalue (<code>return std::string("x");</code>) constructs directly in the caller's storage — <strong>guaranteed</strong> since C++17, not even a move happens.</li>
+    <li><strong>NRVO</strong> (named RVO): returning a local variable by name — permitted and near-universal, but not guaranteed. If it can't apply, the return is treated as a move automatically.</li>
+    <li>⚠️ Therefore <code>return std::move(local);</code> is an anti-pattern: it can't help (the return already moves at worst) and it <em>breaks NRVO</em>. Compilers warn about it now. Saying this unprompted is a strong signal.</li>
+  </ul>
+
+  <h3>Perfect forwarding (recognize, use correctly)</h3>
+<pre><code><span class="kw">template</span> &lt;<span class="kw">typename</span> T&gt;
+<span class="kw">void</span> wrapper(T&amp;&amp; arg) {                <span class="com">// forwarding reference, NOT rvalue ref</span>
+    target(std::forward&lt;T&gt;(arg));      <span class="com">// lvalue stays lvalue, rvalue stays rvalue</span>
+}</code></pre>
+  <ul>
+    <li><code>T&amp;&amp;</code> where <code>T</code> is <strong>deduced</strong> is a <em>forwarding reference</em> — it binds to anything. Reference collapsing (<code>&amp; &amp;&amp;</code> → <code>&amp;</code>) makes it work.</li>
+    <li><code>std::forward&lt;T&gt;</code> = conditional move: casts back to rvalue only if the caller passed an rvalue. Use <code>forward</code> with forwarding references, <code>move</code> with everything else. This is how <code>make_unique</code>, <code>emplace_back</code>, etc. pass your arguments through without extra copies.</li>
+    <li>⚠️ <code>Buffer&amp;&amp;</code> (concrete type) is a plain rvalue reference. <code>T&amp;&amp;</code> (deduced) is forwarding. Same syntax, different beast — a favorite trick question.</li>
+  </ul>
+
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"std::move is a cast — it does nothing except change overload resolution."<br><br>"Inside a move constructor the parameter is an lvalue; forget std::move on the members and you've written a copy constructor with extra steps."<br><br>"Never return std::move(local) — worst case it's redundant, best case it defeats NRVO."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 3 ==================== -->
+<section id="s3">
+  <h2><span class="num">03</span>Smart Pointer Internals</h2>
+
+  <h3>unique_ptr — ownership at zero cost</h3>
+<pre><code><span class="kw">auto</span> p = std::make_unique&lt;<span class="typ">Widget</span>&gt;(<span class="str">42</span>);  <span class="com">// preferred over unique_ptr&lt;Widget&gt;(new ...)</span>
+<span class="kw">auto</span> q = std::move(p);                  <span class="com">// ownership transfers; p is now null</span>
+<span class="com">// auto r = q;                          // COMPILE ERROR — copy is deleted</span></code></pre>
+  <ul>
+    <li><strong>Layout:</strong> with the default deleter, <code>sizeof(unique_ptr&lt;T&gt;) == sizeof(T*)</code> — exactly one raw pointer. The deleter is a stateless empty type stored via the empty base optimization, so it occupies zero bytes. Zero runtime overhead vs a raw pointer; the destructor call is the same <code>delete</code> you'd have written.</li>
+    <li>⚠️ A <strong>custom deleter</strong> changes that: <code>unique_ptr&lt;T, void(*)(T*)&gt;</code> stores the function pointer → 16 bytes. A capture-less lambda deleter stays at 8 (stateless type). Knowing <em>this</em> distinction is a senior tell.</li>
+    <li>Move-only: copying is <code>= delete</code>d — that's the entire single-ownership guarantee, enforced by the type system.</li>
+    <li>Why <code>make_unique</code>: shorter, no naked <code>new</code>, and (pre-C++17) exception safety when two allocations sat in one expression.</li>
+    <li><code>get()</code> for non-owning access, <code>release()</code> to hand ownership back as a raw pointer, <code>reset()</code> to replace/delete.</li>
+  </ul>
+
+  <h3>shared_ptr — the control block</h3>
+  <p>A <code>shared_ptr</code> is <strong>two pointers</strong> (16 bytes): one to the object, one to a heap-allocated <strong>control block</strong> containing:</p>
+  <ul>
+    <li><strong>strong count</strong> — how many shared_ptrs own the object. Hits 0 → object destroyed.</li>
+    <li><strong>weak count</strong> — how many weak_ptrs observe it. Both hit 0 → control block itself freed.</li>
+    <li>the deleter and allocator (type-erased).</li>
+  </ul>
+<pre><code><span class="kw">auto</span> a = std::make_shared&lt;<span class="typ">Widget</span>&gt;();   <span class="com">// ONE allocation: object + control block together</span>
+<span class="kw">auto</span> b = std::shared_ptr&lt;<span class="typ">Widget</span>&gt;(<span class="kw">new</span> <span class="typ">Widget</span>);  <span class="com">// TWO allocations</span>
+
+<span class="kw">auto</span> c = a;             <span class="com">// copy: strong count 1 → 2 (atomic increment)</span>
+<span class="kw">auto</span> d = std::move(a);  <span class="com">// move: counts untouched — a just goes null</span></code></pre>
+  <ul>
+    <li><strong>make_shared wins</strong> because it fuses object + control block into one allocation: fewer allocations, better locality. Trade-off worth naming: the object's memory can't be freed until the <em>weak</em> count also drops, since they share one block — with long-lived weak_ptrs to big objects, the two-allocation form releases object memory sooner.</li>
+    <li>Refcount updates are <strong>atomic</strong> — thread-safe, but each copy costs a contended atomic op. That's why you pass <code>const shared_ptr&amp;</code> (or better, <code>Widget&amp;</code>/<code>Widget*</code>) down call chains instead of copying, and why moves beat copies (no count touch).</li>
+    <li>⚠️ Thread-safety scope: the <em>counts</em> are atomic; the <em>pointed-to object</em> is not protected at all, and mutating one shared_ptr <em>instance</em> from two threads is a data race.</li>
+  </ul>
+
+  <div class="trap"><span class="tag">⚠️ Trap — two control blocks, one object</span>
+  <p><code>Widget* raw = new Widget; shared_ptr&lt;Widget&gt; a(raw), b(raw);</code> creates <strong>two independent control blocks</strong>, each convinced it owns the object → double delete → UB. Same disease as <code>shared_ptr(this)</code> inside a member function. The cure for the <code>this</code> case: inherit <code>std::enable_shared_from_this&lt;Widget&gt;</code> and call <code>shared_from_this()</code>, which finds the existing control block instead of minting a new one.</p></div>
+
+  <h3>weak_ptr — observing without owning</h3>
+<pre><code>std::weak_ptr&lt;<span class="typ">Widget</span>&gt; w = a;      <span class="com">// weak count++, strong count unchanged</span>
+<span class="kw">if</span> (<span class="kw">auto</span> s = w.lock()) {          <span class="com">// atomically: still alive? then take a strong ref</span>
+    s-&gt;use();                      <span class="com">// safe for s's lifetime</span>
+}                                  <span class="com">// else the object is gone</span></code></pre>
+  <ul>
+    <li>The canonical use: <strong>breaking cycles</strong>. Parent holds <code>shared_ptr</code> to child, child holds <code>shared_ptr</code> back to parent → both strong counts stuck at ≥1 → neither ever destroyed → leak with no dangling pointer to catch. Fix: the back-edge (child→parent) becomes <code>weak_ptr</code>. Rule of thumb: <strong>ownership edges shared, back/observer edges weak</strong>.</li>
+    <li><code>lock()</code> not <code>expired()</code>+deref — <code>expired()</code> then use is a race in threaded code.</li>
+  </ul>
+
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"unique_ptr is a raw pointer with a destructor — same size, same speed, plus a compiler-enforced ownership story."<br><br>"shared_ptr is two pointers; the price is a heap control block and atomic count traffic — copies cost, moves are free."<br><br>"Cycles: ownership edges shared, back-edges weak."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 4 ==================== -->
+<section id="s4">
+  <h2><span class="num">04</span>Concurrency Basics</h2>
+
+  <h3>What a data race actually is</h3>
+  <p>Two threads access the same memory location, at least one access is a write, and there's no synchronization ordering them → <strong>data race → UB</strong>. Not "sometimes wrong values" — undefined, the compiler may assume it can't happen and optimize accordingly. The famous demo:</p>
+<pre><code><span class="kw">int</span> counter = <span class="str">0</span>;
+<span class="com">// two threads each run: for (int i = 0; i &lt; 1'000'000; ++i) ++counter;</span>
+<span class="com">// result: almost never 2'000'000. ++counter is read-modify-write, three steps,</span>
+<span class="com">// and interleavings lose updates. Also formally UB regardless of the count.</span></code></pre>
+
+  <h3>Mutexes and the lock types</h3>
+<pre><code>std::mutex m;
+<span class="kw">int</span> counter = <span class="str">0</span>;
+
+<span class="kw">void</span> inc() {
+    std::lock_guard&lt;std::mutex&gt; lk(m);   <span class="com">// RAII: locks now, unlocks in destructor</span>
+    ++counter;
+}                                        <span class="com">// unlock even if an exception flies</span></code></pre>
+  <ul>
+    <li><strong>Never</strong> raw <code>m.lock()/m.unlock()</code> — an early return or exception between them deadlocks the next locker. RAII (resource acquisition is initialization) makes unlock unskippable. This is <em>the</em> RAII example interviewers want.</li>
+    <li><code>lock_guard</code>: lock in ctor, unlock in dtor, nothing else. Default choice.</li>
+    <li><code>unique_lock</code>: same plus unlock/relock ability, deferred locking, movability — needed by <code>condition_variable</code>. Slightly heavier; use only when you need the flexibility.</li>
+    <li><code>scoped_lock</code> (C++17): locks <strong>multiple mutexes atomically</strong> with a deadlock-avoidance algorithm. Two threads locking A-then-B and B-then-A is the classic deadlock; <code>scoped_lock(a, b)</code> or a global lock <em>ordering</em> are the two standard answers. ⚠️</li>
+  </ul>
+
+  <h3>condition_variable — waiting for a fact to become true</h3>
+<pre><code>std::mutex m;
+std::condition_variable cv;
+std::queue&lt;<span class="typ">Task</span>&gt; q;
+
+<span class="com">// consumer</span>
+std::unique_lock&lt;std::mutex&gt; lk(m);
+cv.wait(lk, [&amp;]{ <span class="kw">return</span> !q.empty(); });  <span class="com">// unlocks while asleep, relocks to test</span>
+<span class="typ">Task</span> t = std::move(q.front()); q.pop();
+lk.unlock();
+
+<span class="com">// producer</span>
+{ std::lock_guard&lt;std::mutex&gt; lk(m); q.push(std::move(task)); }
+cv.notify_one();</code></pre>
+  <ul>
+    <li>⚠️ <strong>Always the predicate form</strong> (or an explicit while-loop). Two reasons: <strong>spurious wakeups</strong> — the OS may wake a waiter with no notify at all — and the wakeup/recheck gap where another consumer may have already taken the item. <code>if</code> + wait is the bug; the predicate is a loop.</li>
+    <li><code>wait</code> requires <code>unique_lock</code> because it must unlock during the sleep and relock before returning.</li>
+    <li><code>notify_one</code> wakes one waiter; <code>notify_all</code> wakes all (use when different waiters wait for different conditions, or on shutdown).</li>
+    <li>This producer/consumer skeleton <em>is</em> the "implement a thread-safe queue / bounded buffer" interview question — practice writing it cold.</li>
+  </ul>
+
+  <h3>atomics — when a mutex is overkill</h3>
+<pre><code>std::atomic&lt;<span class="kw">int</span>&gt; counter{<span class="str">0</span>};
+counter.fetch_add(<span class="str">1</span>);          <span class="com">// or ++counter — single indivisible instruction</span>
+<span class="kw">bool</span> was = flag.exchange(<span class="kw">true</span>); <span class="com">// test-and-set</span></code></pre>
+  <ul>
+    <li>Right tool for single-variable state: counters, flags, sequence numbers. The moment an <em>invariant spans two variables</em> (queue + its size, check-then-act), you need a mutex — two atomics don't make their combination atomic. ⚠️</li>
+    <li>Default memory ordering is <code>seq_cst</code> (sequentially consistent) — the safe one. Weaker orderings (<code>acquire</code>/<code>release</code>/<code>relaxed</code>) exist for performance; in an interview, <em>name</em> them, say the default is seq_cst and that you'd reach for weaker orderings only with a benchmark and a careful proof. Overclaiming lock-free expertise backfires.</li>
+  </ul>
+
+  <h3>Threads themselves + odds and ends</h3>
+<pre><code>std::thread t(work, arg);       <span class="com">// starts immediately; args are COPIED into the thread</span>
+t.join();                        <span class="com">// must join or detach before t is destroyed,</span>
+                                 <span class="com">// else std::terminate</span>
+std::jthread jt(work);           <span class="com">// C++20: joins automatically in its destructor</span></code></pre>
+  <ul>
+    <li>⚠️ Thread args copy by default — <code>std::thread(f, std::ref(x))</code> to pass a reference; dangling references into dead stack frames are the classic bug.</li>
+    <li>Prefer <code>std::async</code>/futures or a thread pool for task-shaped work; raw threads for long-lived workers.</li>
+    <li><strong>Magic statics:</strong> initialization of a function-local <code>static</code> is thread-safe since C++11 — the Meyers singleton (<code>static Widget w; return w;</code>) needs no locking. <code>std::call_once</code>/<code>once_flag</code> for the general case.</li>
+  </ul>
+
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"A data race is UB, not a wrong answer — the fix is synchronization, not retries."<br><br>"Locks are RAII or they're bugs."<br><br>"condition_variable waits are loops: spurious wakeups and stolen wakeups both re-test the predicate."<br><br>"Atomics protect a variable; mutexes protect an invariant."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 5 ==================== -->
+<section id="s5">
+  <h2><span class="num">05</span>Combined Cheat Sheet</h2>
+
+  <h3>Iterator invalidation</h3>
+  <ul class="checklist">
+    <li>vector reallocation kills everything; reserve() prevents it and you should say so</li>
+    <li>erase returns the next iterator — reseat with <code>it = c.erase(it)</code></li>
+    <li>bulk removal from vector: erase-remove idiom or <code>std::erase_if</code> (C++20)</li>
+    <li>deque push at ends / unordered rehash: iterators die, references survive — know why</li>
+    <li>never erase inside a range-for</li>
+  </ul>
+
+  <h3>Move semantics</h3>
+  <ul class="checklist">
+    <li>std::move = cast; const kills moves silently (falls back to copy)</li>
+    <li>move ctor: parameter is an lvalue — std::move/std::exchange each member; null the source</li>
+    <li>moves marked noexcept, or vector copies on reallocation</li>
+    <li>declaring a destructor suppresses implicit moves (Rule of Five/Zero)</li>
+    <li>never <code>return std::move(local)</code> — defeats NRVO</li>
+    <li>deduced <code>T&amp;&amp;</code> = forwarding reference → <code>std::forward&lt;T&gt;</code>; concrete <code>X&amp;&amp;</code> = rvalue ref → <code>std::move</code></li>
+  </ul>
+
+  <h3>Smart pointers</h3>
+  <ul class="checklist">
+    <li>unique_ptr = 8 bytes, zero overhead, move-only; function-pointer deleter doubles it</li>
+    <li>shared_ptr = 2 pointers + control block {strong, weak, deleter}; copies do atomic ops, moves don't</li>
+    <li>make_shared: one allocation; caveat — weak_ptrs pin the whole block</li>
+    <li>never two shared_ptrs from one raw pointer; never shared_ptr(this) — enable_shared_from_this</li>
+    <li>cycles: back-edges are weak_ptr; access via lock(), not expired()</li>
+  </ul>
+
+  <h3>Concurrency</h3>
+  <ul class="checklist">
+    <li>data race = concurrent access + a write + no sync = UB</li>
+    <li>lock_guard default, unique_lock for cv/flexibility, scoped_lock for multiple mutexes</li>
+    <li>cv.wait always with a predicate (spurious + stolen wakeups)</li>
+    <li>producer/consumer queue: be able to write it cold</li>
+    <li>atomics for one variable, mutex for an invariant across variables</li>
+    <li>join or detach every thread; jthread auto-joins; std::ref to pass references</li>
+    <li>function-local static init is thread-safe (Meyers singleton)</li>
+  </ul>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+</div>
+</body>
+</html>

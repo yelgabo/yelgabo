@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Interview Prep Part 3 — Performance &amp; Optimization</title>
+<style>
+  :root {
+    --paper: #f7f8fa;
+    --ink: #1a1f2b;
+    --ink-soft: #4a5468;
+    --accent: #00599c;
+    --accent-soft: #e3eef7;
+    --trap-bg: #fdf3e3;
+    --trap-border: #d9932c;
+    --trap-ink: #9a6414;
+    --quote-bg: #eef3f8;
+    --code-bg: #232733;
+    --code-ink: #e8eaf0;
+    --kw: #7aa2f7;
+    --str: #9ece6a;
+    --com: #6b7089;
+    --type: #e0af68;
+    --rule: #d8dce4;
+    --card: #ffffff;
+  }
+  :root[data-theme="dark"] {
+    --paper: #14161c;
+    --ink: #e8eaf0;
+    --ink-soft: #9aa3b8;
+    --accent: #5b9fd8;
+    --accent-soft: #14283c;
+    --trap-bg: #2a2113;
+    --trap-ink: #e6b45e;
+    --quote-bg: #16222e;
+    --code-bg: #1b1e28;
+    --rule: #2b303c;
+    --card: #1c1f28;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; font-size: 16px; line-height: 1.65; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px 80px; }
+  header.masthead { border-bottom: 3px solid var(--ink); padding: 48px 0 24px; margin-bottom: 8px; }
+  .eyebrow { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.15; margin: 0 0 12px; font-weight: 800; letter-spacing: -0.02em; }
+  .subtitle { color: var(--ink-soft); margin: 0; max-width: 62ch; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; font-size: 14px; color: var(--ink-soft); }
+  nav.toc { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 18px 22px; margin: 24px 0 40px; }
+  nav.toc p { margin: 0 0 8px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+  nav.toc ol { margin: 0; padding: 0 0 0 1.4em; columns: 2; column-gap: 32px; font-size: 14.5px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+  @media (max-width: 560px) { nav.toc ol { columns: 1; } }
+  section { margin-top: 56px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; margin: 0 0 4px; padding-top: 8px; }
+  h2 .num { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--accent); font-weight: 700; margin-right: 10px; }
+  h2::after { content: ""; display: block; width: 56px; height: 3px; background: var(--accent); margin-top: 8px; }
+  h3 { font-size: 18px; margin: 28px 0 6px; }
+  p { margin: 12px 0; }
+  ul, ol { padding-left: 1.3em; }
+  li { margin: 6px 0; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.88em; background: var(--accent-soft); color: var(--ink); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.55; margin: 16px 0; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  .kw { color: var(--kw); } .str { color: var(--str); } .com { color: var(--com); font-style: italic; } .typ { color: var(--type); }
+  .trap { background: var(--trap-bg); border-left: 4px solid var(--trap-border); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 18px 0; }
+  .trap .tag { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--trap-ink); display: block; margin-bottom: 4px; }
+  .trap p:first-of-type { margin-top: 0; } .trap p:last-child { margin-bottom: 0; }
+  .oneliner { background: var(--quote-bg); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 18px 0; font-style: italic; }
+  .oneliner .tag { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; font-style: normal; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--rule); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding-left: 28px; position: relative; }
+  .checklist li::before { content: "☐"; position: absolute; left: 4px; color: var(--accent); font-size: 15px; }
+  .backtop { display: block; margin-top: 28px; font-size: 13px; }
+  .backtop a { color: var(--ink-soft); text-decoration: none; }
+  .backtop a:hover { color: var(--accent); }
+  .theme-toggle { position: fixed; top: 14px; right: 14px; z-index: 10; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--rule); background: var(--card); color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  @media print { body { background: #fff; font-size: 12px; } pre { white-space: pre-wrap; } nav.toc, .backtop, .theme-toggle { display: none; } section { margin-top: 28px; } }
+</style>
+<script>
+(function () {
+  var t = null;
+  try { t = localStorage.getItem('theme'); } catch (e) {}
+  if (t !== 'dark' && t !== 'light') {
+    t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  document.documentElement.dataset.theme = t;
+})();
+function updateThemeBtn() {
+  var b = document.getElementById('themeBtn');
+  if (b) b.textContent = document.documentElement.dataset.theme === 'dark' ? '\u2600' : '\u263E';
+}
+function toggleTheme() {
+  var r = document.documentElement;
+  r.dataset.theme = (r.dataset.theme === 'dark') ? 'light' : 'dark';
+  try { localStorage.setItem('theme', r.dataset.theme); } catch (e) {}
+  updateThemeBtn();
+}
+</script>
+</head>
+<body>
+<button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle dark mode">&#9790;</button>
+<script>updateThemeBtn();</script>
+<div class="wrap">
+
+<header class="masthead" id="top">
+  <p class="eyebrow">C++ Interview Prep · Part 3</p>
+  <h1>Performance &amp; Optimization</h1>
+  <p class="subtitle">For optimization-focused roles: the memory hierarchy, data layout, branches, vectorization, allocation, compiler behavior, and — above all — measurement. Traps ⚠️, one-liners 💬.</p>
+  <div class="legend"><span>⚠️ interview trap</span><span>💬 one-liner worth saying verbatim</span></div>
+</header>
+
+<nav class="toc">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#s1">The Mental Model: Latency Numbers</a></li>
+    <li><a href="#s2">Cache Mechanics</a></li>
+    <li><a href="#s3">Data Layout</a></li>
+    <li><a href="#s4">Branches &amp; Speculation</a></li>
+    <li><a href="#s5">ILP &amp; Vectorization</a></li>
+    <li><a href="#s6">Allocation Costs</a></li>
+    <li><a href="#s7">What the Compiler Does For You</a></li>
+    <li><a href="#s8">Concurrency Performance</a></li>
+    <li><a href="#s9">Measurement — the Real Skill</a></li>
+    <li><a href="#s10">Classic "Why Is This Slow?" Questions</a></li>
+    <li><a href="#s11">Cheat Sheet</a></li>
+  </ol>
+</nav>
+
+<!-- ==================== 1 ==================== -->
+<section id="s1">
+  <h2><span class="num">01</span>The Mental Model: Latency Numbers</h2>
+  <p>Modern optimization is mostly about one fact: <strong>CPUs got fast; memory didn't keep up.</strong> A core can execute 4+ instructions per cycle at ~4–5 GHz, but a trip to main memory stalls it for hundreds of instruction slots. Approximate numbers to carry in your head (they anchor every argument you'll make in an interview):</p>
+  <table>
+    <tr><th>Operation</th><th>Latency</th><th>≈ scaled to human time (1 cycle = 1 s)</th></tr>
+    <tr><td>Register / simple ALU op</td><td>~0.25–1 ns</td><td>seconds</td></tr>
+    <tr><td>L1 cache hit</td><td>~1 ns (4–5 cycles)</td><td>seconds</td></tr>
+    <tr><td>L2 cache hit</td><td>~4 ns (~14 cycles)</td><td>~15 s</td></tr>
+    <tr><td>L3 cache hit</td><td>~15–40 ns</td><td>a minute or two</td></tr>
+    <tr><td>Main memory (RAM)</td><td>~60–100 ns</td><td>minutes</td></tr>
+    <tr><td>Branch misprediction</td><td>~15–20 cycles</td><td>~20 s</td></tr>
+    <tr><td>Mutex lock/unlock, uncontended</td><td>~20–50 ns</td><td>a minute</td></tr>
+    <tr><td>NVMe SSD read</td><td>~20–100 µs</td><td>days</td></tr>
+    <tr><td>Same-datacenter network round trip</td><td>~500 µs</td><td>a week</td></tr>
+  </table>
+  <p>Numbers vary by hardware — what matters is the <strong>ratios</strong>: RAM is ~100× L1; disk is ~1000× RAM. One cache miss costs the same as dozens of arithmetic operations, so an algorithm that does <em>more work on resident data</em> routinely beats one that does <em>less work with scattered access</em>. That single inversion of intuition explains most of this guide.</p>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Big-O counts operations; hardware charges for memory. When they disagree at real sizes, memory usually wins."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 2 ==================== -->
+<section id="s2">
+  <h2><span class="num">02</span>Cache Mechanics</h2>
+  <h3>Lines, hierarchy, locality</h3>
+  <ul>
+    <li>Memory moves in <strong>cache lines</strong> — 64-byte units. Touch one byte, the whole line is fetched. Reading a 4-byte int pulls in its 60 neighbors <em>for free</em>. Cache-friendly code is code that then <em>uses</em> those neighbors.</li>
+    <li>Hierarchy per core: L1 (~32–64 KB data, fastest), L2 (~512 KB–2 MB), shared L3 (~8–96 MB), then RAM. Each level is roughly 3–10× slower and much larger than the one above.</li>
+    <li><strong>Spatial locality</strong>: after using address X, you'll likely use X+4. <strong>Temporal locality</strong>: you'll likely use X again soon. Caches are a bet on both; your job is to make the bet pay.</li>
+    <li>The <strong>hardware prefetcher</strong> watches your access pattern and fetches ahead — but only for patterns it can predict: sequential and constant-stride. Pointer chasing (linked lists, trees, <code>vector&lt;unique_ptr&lt;T&gt;&gt;</code>) defeats it completely, because the next address isn't known until the current load finishes.</li>
+  </ul>
+  <div class="trap"><span class="tag">⚠️ Trap — the linked list question</span>
+  <p>"List has O(1) insert, vector has O(n) — when is the vector still faster?" Almost always at realistic sizes: traversing to the insertion point costs a cache miss <em>per node</em> (~100 ns each), while the vector's shift is a sequential <code>memmove</code> streaming at GB/s with the prefetcher's help. Vectors also have no per-node allocation or 16-byte pointer overhead. Real answer interviewers want: "measured crossover points are surprisingly large; default to vector, use a list only when iterator stability or splicing is the requirement."</p></div>
+  <h3>Row-major traversal</h3>
+<pre><code><span class="com">// C++ 2D arrays are row-major: m[i][j] and m[i][j+1] are adjacent bytes.</span>
+<span class="kw">for</span> (i...) <span class="kw">for</span> (j...) sum += m[i][j];   <span class="com">// sequential: ~1 miss per 16 ints</span>
+<span class="kw">for</span> (j...) <span class="kw">for</span> (i...) sum += m[i][j];   <span class="com">// stride = row length: miss per ACCESS</span>
+<span class="com">// Same operation count. 5–20x runtime difference at sizes past L2.</span></code></pre>
+  <p>The grown-up version of this answer is <strong>loop tiling/blocking</strong>: process the data in sub-blocks that fit in cache (the classic matrix-multiply optimization). Name it; deriving it live is rarely required.</p>
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"Memory arrives 64 bytes at a time — the question is always how many of those bytes I actually use."<br><br>"The prefetcher hides latency for predictable strides; pointer chasing makes every hop a full-price miss."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 3 ==================== -->
+<section id="s3">
+  <h2><span class="num">03</span>Data Layout</h2>
+  <h3>AoS vs SoA vs pointer soup</h3>
+  <p>Three ways to store N objects, ranked by cache behavior for field-wise processing (AoS = array of structures; SoA = structure of arrays):</p>
+<pre><code><span class="com">// AoS — array of structures: whole objects contiguous</span>
+<span class="kw">struct</span> <span class="typ">Particle</span> { <span class="kw">float</span> x, y, z, mass; };
+std::vector&lt;<span class="typ">Particle</span>&gt; ps;
+
+<span class="com">// SoA — structure of arrays: one contiguous array per field</span>
+<span class="kw">struct</span> <span class="typ">Particles</span> { std::vector&lt;<span class="kw">float</span>&gt; x, y, z, mass; };
+
+<span class="com">// pointer soup — contiguous pointers, scattered objects (worst)</span>
+std::vector&lt;std::unique_ptr&lt;<span class="typ">Particle</span>&gt;&gt; pps;</code></pre>
+  <ul>
+    <li>Hot loop reads only <code>mass</code>: in AoS every 64-byte line carries 48 bytes of x/y/z you didn't ask for — 75% of memory bandwidth wasted. In SoA, mass values are packed: every byte fetched is useful, and the loop vectorizes trivially.</li>
+    <li>AoS wins when you touch <strong>all fields of one object together</strong>; SoA wins when hot loops touch <strong>a few fields across many objects</strong>. Games (entity component systems), physics, analytics, ML runtimes are SoA territory.</li>
+    <li>Pointer soup adds a miss per element and defeats prefetching — see §2. If you need polymorphism per element, consider one vector per concrete type, or <code>std::variant</code>, before pointers.</li>
+  </ul>
+  <h3>Padding, alignment, packing</h3>
+<pre><code><span class="kw">struct</span> <span class="typ">Bad</span>  { <span class="kw">char</span> c; <span class="kw">double</span> d; <span class="kw">char</span> c2; };  <span class="com">// 24 bytes (7 + 6 bytes padding)</span>
+<span class="kw">struct</span> <span class="typ">Good</span> { <span class="kw">double</span> d; <span class="kw">char</span> c, c2;   };  <span class="com">// 16 bytes — just reordered</span></code></pre>
+  <ul>
+    <li>Each member sits at the next offset satisfying its own alignment; total size rounds up to the strictest member's alignment. <strong>Ordering members by descending size/alignment minimizes padding.</strong> A 33% size cut means 33% more objects per cache line — a real optimization, not pedantry.</li>
+    <li><strong>Hot/cold splitting:</strong> if a struct has 8 bytes touched every frame and 200 bytes touched rarely, splitting the cold part behind a pointer (or into a parallel array) multiplies how many hot objects fit per line.</li>
+    <li><code>alignas(64)</code> pins an object to a cache-line boundary — the tool for false sharing (§8).</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Layout is the highest-leverage optimization because it changes what every loop pays, without touching the loops."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 4 ==================== -->
+<section id="s4">
+  <h2><span class="num">04</span>Branches &amp; Speculation</h2>
+  <ul>
+    <li>Pipelines are deep (~15–20 stages); the CPU can't wait to know a branch's direction, so it <strong>predicts</strong> and executes speculatively. Right: free. Wrong: pipeline flush, ~15–20 cycles.</li>
+    <li>Predictors learn patterns. Loop back-edges: ~always right. Stable conditions: right. <strong>Data-dependent 50/50 branches are the pathological case</strong> — half your iterations eat a flush.</li>
+  </ul>
+  <h3>The famous demo</h3>
+<pre><code><span class="com">// sum only elements &gt;= 128, over random bytes:</span>
+<span class="kw">for</span> (<span class="kw">int</span> x : data) <span class="kw">if</span> (x &gt;= <span class="str">128</span>) sum += x;
+<span class="com">// SORTED data: ~5x faster than unsorted. Same elements, same total work —</span>
+<span class="com">// sorted input makes the branch predictable (all-false then all-true).</span></code></pre>
+  <h3>Going branchless</h3>
+<pre><code>sum += (x &gt;= <span class="str">128</span>) ? x : <span class="str">0</span>;        <span class="com">// often compiles to cmov / arithmetic — no branch</span>
+<span class="kw">int</span> mx = std::max(a, b);           <span class="com">// compilers emit cmov for simple selects</span>
+mask = -(x &gt;= <span class="str">128</span>); sum += x &amp; mask;  <span class="com">// manual mask trick, same idea</span></code></pre>
+  <ul>
+    <li>Branchless = compute both/select, trading a possible flush for a few always-paid ops. Wins when the branch is unpredictable; <em>loses</em> when the branch was predictable (you pay the ops for nothing) or when it blocks other optimizations. ⚠️ "Branchless is not free — it's a trade you justify with a measurement."</li>
+    <li><code>[[likely]]</code>/<code>[[unlikely]]</code> (C++20) hint code placement (hot path falls through, cold path jumps away) — modest effect, mostly about instruction-cache layout, not the predictor.</li>
+    <li>Virtual calls are <strong>indirect branches</strong> — predicted too. A call site that always hits one type predicts fine; megamorphic sites don't. (Sorting a polymorphic collection by concrete type is a real optimization for exactly this reason.)</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Branches are free when predictable and ~20 cycles when not — so the question is never 'how many branches' but 'how predictable.'"</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 5 ==================== -->
+<section id="s5">
+  <h2><span class="num">05</span>ILP &amp; Vectorization</h2>
+  <h3>ILP — instruction-level parallelism</h3>
+<pre><code><span class="com">// One accumulator: every add waits on the previous one (dependency chain)</span>
+<span class="kw">for</span> (i) sum += a[i];
+
+<span class="com">// Four accumulators: four independent chains run in parallel on one core</span>
+<span class="kw">for</span> (i += <span class="str">4</span>) { s0 += a[i]; s1 += a[i+<span class="str">1</span>]; s2 += a[i+<span class="str">2</span>]; s3 += a[i+<span class="str">3</span>]; }
+sum = s0 + s1 + s2 + s3;   <span class="com">// often 2–4x, no threads involved</span></code></pre>
+  <p>A modern core is <strong>superscalar</strong> (executes several instructions per cycle) and <strong>out-of-order</strong> (runs whatever's ready). What limits it is <em>dependency chains</em> — each instruction waiting on the last one's result. Breaking a reduction into independent accumulators is the canonical fix. (Compilers do this for integer sums; for floats they need <code>-ffast-math</code>-style permission, because FP addition isn't associative.) ⚠️</p>
+  <h3>SIMD — single instruction, multiple data</h3>
+  <ul>
+    <li>Vector registers process many elements per instruction: SSE (streaming SIMD extensions, 128-bit = 4 floats), AVX/AVX2 (advanced vector extensions, 256-bit = 8 floats), AVX-512 (16 floats). Theoretical 4–16× on arithmetic-dense loops.</li>
+    <li><strong>Auto-vectorization</strong> (compilers at <code>-O2</code>/<code>-O3</code>) works when the loop is: contiguous unit-stride access, known trip count shape, no cross-iteration dependencies, no unpredictable branches, no aliasing ambiguity. This is why SoA layout and simple loops matter — they're what the vectorizer can digest.</li>
+    <li><strong>Aliasing:</strong> if the compiler can't prove <code>dst</code> and <code>src</code> don't overlap, it must assume they might, and won't vectorize. Fixes: <code>__restrict</code>, local copies, or std algorithms. Check what actually happened with <code>-Rpass=loop-vectorize</code> (Clang) / <code>-fopt-info-vec</code> (GCC), or read the assembly on Compiler Explorer (godbolt.org).</li>
+    <li>Explicit SIMD when auto fails: intrinsics (<code>_mm256_add_ps</code>...) or libraries (<code>std::experimental::simd</code>, Highway, xsimd). In an interview, say you'd exhaust layout + auto-vectorization first — intrinsics are a maintenance tax you pay knowingly.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"A single core is already parallel twice over — multiple ports and vector lanes — and dependency chains are what waste it."<br><br>"The vectorizer eats simple loops over contiguous data; my job is mostly to stop feeding it excuses."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 6 ==================== -->
+<section id="s6">
+  <h2><span class="num">06</span>Allocation Costs</h2>
+  <ul>
+    <li>A heap allocation is ~25–100+ ns (lock-free fast paths help, but there's bookkeeping, possible lock contention, possible page faults) — <strong>and</strong> it scatters your data (§2's real cost). Deallocation similar. "Allocation in the hot loop" is the first thing to grep for in any slow-program question.</li>
+    <li><strong><code>reserve()</code></strong>: a vector growing to 1M elements without reserve does ~20 geometric reallocations, each copying/moving everything. One <code>reserve(1'000'000)</code> removes all of it. Cheapest optimization in the language.</li>
+    <li><strong>SSO — small string optimization:</strong> <code>std::string</code> stores short strings (≤15 chars in libstdc++/libc++) <em>inside the string object itself</em>, no heap at all. Consequences: short-string code is allocation-free; moving a string is not always "free pointer steal" (SSO strings copy their bytes); and keys under 16 chars in a map are cheaper than people think.</li>
+    <li><strong>Arenas / pools:</strong> allocate a big block once, hand out pieces by bumping a pointer, free everything at once. Removes per-allocation cost <em>and</em> gives contiguity. Standard forms: <code>std::pmr::monotonic_buffer_resource</code> (pmr = polymorphic memory resources), custom bump allocators. The per-frame arena is the canonical game-engine pattern — allocate all frame-lifetime data in it, reset the pointer at frame end.</li>
+    <li>Also in this family: <code>emplace_back</code> vs <code>push_back</code> (construct in place, skip a temporary), string_view to avoid copies, moving instead of copying containers.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Allocation costs twice: once at the call, and forever after in where the data ended up."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 7 ==================== -->
+<section id="s7">
+  <h2><span class="num">07</span>What the Compiler Does For You</h2>
+  <ul>
+    <li><strong>Optimization levels:</strong> <code>-O0</code> debug (nothing optimized — never benchmark this ⚠️), <code>-O1</code>, <code>-O2</code> the production default (inlining, vectorization, unrolling...), <code>-O3</code> more aggressive vectorization/unrolling, <code>-Os</code> optimize for size. <code>-march=native</code> unlocks the current CPU's instruction sets (AVX2 etc.) — without it, binaries target a lowest common denominator.</li>
+    <li><strong>Inlining</strong> is the gateway optimization: it eliminates call overhead, but the real value is that the merged body enables constant propagation, dead-code elimination, and vectorization <em>across</em> the call boundary. This is why tiny functions in headers, lambdas passed to <code>std::sort</code> (vs a function pointer to <code>qsort</code>), and templates optimize so well — the compiler sees through them.</li>
+    <li><strong>LTO — link-time optimization:</strong> optimize across .cpp boundaries at link time; inlines functions that live in other translation units. <strong>PGO — profile-guided optimization:</strong> compile, run representative workloads, recompile using the observed hot paths and branch biases. Both are standard toggles in perf-sensitive shops; name them.</li>
+    <li><strong>Why undefined behavior (UB) exists</strong>: the compiler optimizes assuming UB never happens — signed overflow can't occur (so <code>i+1 &gt; i</code> folds to true, loops vectorize), pointers of unrelated types don't alias (strict aliasing). UB is the license for a whole tier of optimization. Corollary: sanitizers (<code>-fsanitize=address,undefined</code>) in debug, because optimized UB does surprising things.</li>
+    <li><strong>The as-if rule:</strong> the compiler may transform anything as long as observable behavior is preserved — which is also why naive benchmarks get their loops deleted (§9).</li>
+    <li><strong>Verify, don't assume:</strong> Compiler Explorer (godbolt.org) to read the emitted assembly. In an optimization interview, "I'd check what the compiler emitted on godbolt" is a credibility sentence.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"My first optimization is making the code inlineable and alias-free — the compiler does the rest better than I do."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 8 ==================== -->
+<section id="s8">
+  <h2><span class="num">08</span>Concurrency Performance</h2>
+  <ul>
+    <li><strong>False sharing</strong> — the marquee question. Two threads write two <em>different</em> variables that happen to sit in the same 64-byte cache line. Cache coherence (the MESI protocol family — modified/exclusive/shared/invalid states) allows one core exclusive write access to a line at a time, so the line ping-pongs between cores. No data race, no bug — just 10–100× slowdown. Fix: pad or <code>alignas(64)</code> per-thread data:</li>
+  </ul>
+<pre><code><span class="kw">struct</span> <span class="typ">Counters</span> {
+    <span class="kw">alignas</span>(<span class="str">64</span>) std::atomic&lt;<span class="kw">long</span>&gt; a;   <span class="com">// each on its own cache line</span>
+    <span class="kw">alignas</span>(<span class="str">64</span>) std::atomic&lt;<span class="kw">long</span>&gt; b;
+};
+<span class="com">// std::hardware_destructive_interference_size = the portable "64"</span></code></pre>
+  <ul>
+    <li><strong>Contention beats mechanism:</strong> an uncontended atomic or mutex is tens of ns; a <em>contended</em> one serializes cores and thrashes coherence traffic. The fix is rarely a fancier lock — it's <strong>sharding</strong> (per-thread counters summed at the end), finer granularity, or restructuring to share less.</li>
+    <li><strong>Amdahl's law:</strong> speedup ≤ 1 / (serial fraction). 10% serial caps you at 10× no matter the core count. Use it to say why "just add threads" plateaus.</li>
+    <li>Threading has fixed costs: spawn (~10–50 µs), context switches, cache cooling when work migrates. Below ~100 µs of work per task, a thread pool's queue overhead can exceed the work — batch small tasks.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"False sharing is a performance data race: invisible to correctness tools, obvious in perf counters."<br><br>"Contended anything is slow — the win is sharing less, not locking cleverer."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 9 ==================== -->
+<section id="s9">
+  <h2><span class="num">09</span>Measurement — the Real Skill</h2>
+  <p>Everything above is hypothesis-generation. <strong>Measurement is the actual job</strong>, and interviewers for optimization roles probe it harder than any mechanism. The discipline:</p>
+  <ol>
+    <li><strong>Profile before touching anything.</strong> Intuition about where time goes is notoriously wrong. Tools: <code>perf</code> (Linux — <code>perf record</code>/<code>perf report</code>, <code>perf stat</code> for counters like cache-misses, branch-misses, IPC), Intel VTune, Instruments (macOS), flame graphs for visualization.</li>
+    <li><strong>Find the hot spot, form a hypothesis</strong> from hardware counters: high cache-miss rate → layout/access problem (§2–3); high branch-miss rate → §4; low IPC (instructions per cycle) with low misses → dependency chains (§5); time in <code>malloc</code> → §6.</li>
+    <li><strong>Change one thing, measure again</strong>, keep or revert. Optimization without a before/after number is superstition.</li>
+  </ol>
+  <h3>Microbenchmark honesty</h3>
+<pre><code><span class="com">// Google Benchmark skeleton — the standard tool</span>
+<span class="kw">static void</span> BM_Sum(benchmark::State&amp; st) {
+    <span class="kw">auto</span> v = make_data();
+    <span class="kw">for</span> (<span class="kw">auto</span> _ : st) {
+        <span class="kw">auto</span> s = sum(v);
+        benchmark::DoNotOptimize(s);      <span class="com">// stop the as-if rule deleting the loop</span>
+    }
+}</code></pre>
+  <ul>
+    <li>⚠️ Classic microbenchmark lies: the optimizer deleted your unused result (<code>DoNotOptimize</code>); everything fit in cache during the benchmark but won't in production; the benchmark ran during CPU frequency ramp-up (warm up first, lock frequency); you benchmarked <code>-O0</code>; you measured wall time on a noisy machine once instead of distributions across runs.</li>
+    <li>Report medians/percentiles across repetitions, not single runs. Watch variance — high variance usually means the benchmark is measuring the machine, not the code.</li>
+    <li>Know the difference: <strong>microbenchmark</strong> (isolated function, great for comparing implementations, blind to system effects) vs <strong>macrobenchmark/production profiling</strong> (real workload, the ground truth). Wins in the former sometimes vanish in the latter — usually because cache behavior differs.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"Profile first — the hot spot is never where you think, and I have the scars to prove it."<br><br>"An optimization without a before/after measurement is a rumor."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 10 ==================== -->
+<section id="s10">
+  <h2><span class="num">10</span>Classic "Why Is This Slow?" Questions</h2>
+  <table>
+    <tr><th>Symptom / question</th><th>Answer sketch</th></tr>
+    <tr><td>Column-wise 2D loop slow</td><td>Row-major layout → stride = row length → miss per access. Swap loop order; tile if both orders are needed.</td></tr>
+    <tr><td>Same loop, sorted input 5× faster</td><td>Branch predictor. Sorted → predictable. Fix for random: branchless select.</td></tr>
+    <tr><td>vector&lt;unique_ptr&lt;Base&gt;&gt; hot loop</td><td>Pointer chase per element + indirect call. Per-type vectors, variant, or sort by type.</td></tr>
+    <tr><td>Threads made it slower</td><td>False sharing (pad/alignas), contention (shard), or tasks too small (batch). Check with perf counters.</td></tr>
+    <tr><td>Slower after "removing work" with a helper in another .cpp</td><td>Killed inlining across the translation unit boundary. Header/inline it or enable LTO.</td></tr>
+    <tr><td>map vs unordered_map vs sorted vector</td><td>unordered_map O(1) but hashing + a pointer chase per bucket; map = pointer chase per level; sorted vector + lower_bound is often fastest to iterate/search at moderate sizes — contiguity beats asymptotics. Measure.</td></tr>
+    <tr><td>Loop won't vectorize</td><td>Aliasing, non-unit stride, or a data-dependent branch. __restrict, SoA, hoist the branch; verify with -Rpass/-fopt-info.</td></tr>
+    <tr><td>String-heavy code slow</td><td>Allocations (reserve, SSO awareness, string_view), and hashing costs in unordered containers.</td></tr>
+  </table>
+  <p>Answer pattern for all of them: name the hardware mechanism → state the fix → say how you'd confirm with a measurement. Mechanism–fix–measurement is the three-beat answer that reads as "has done this professionally."</p>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 11 ==================== -->
+<section id="s11">
+  <h2><span class="num">11</span>Cheat Sheet</h2>
+  <ul class="checklist">
+    <li>Latency ladder: L1 ~1 ns → RAM ~100 ns → SSD ~µs; ratios drive everything</li>
+    <li>64-byte cache lines; count useful bytes per line fetched</li>
+    <li>Prefetcher handles sequential/strided; pointer chasing pays full price per hop</li>
+    <li>Row-major traversal; tiling for matrix work</li>
+    <li>SoA when loops touch few fields; AoS when whole objects; never pointer soup in hot paths</li>
+    <li>Order struct members by descending alignment; hot/cold split; alignas(64) for per-thread data</li>
+    <li>Branches: predictable ≈ free, random ≈ 20 cycles; branchless is a measured trade</li>
+    <li>Break dependency chains (multiple accumulators); feed the auto-vectorizer (contiguous, no aliasing, no branches)</li>
+    <li>No allocation in hot loops; reserve(); SSO ≤ 15 chars; arenas for frame/request lifetimes</li>
+    <li>-O2/-O3 + -march=native; inlining enables everything; LTO and PGO by name; godbolt to verify</li>
+    <li>False sharing → alignas; contention → shard; Amdahl caps threading wins</li>
+    <li>Profile first (perf/VTune, counters: cache-miss, branch-miss, IPC); DoNotOptimize; medians over runs; never -O0</li>
+    <li>Answer format: mechanism → fix → measurement</li>
+  </ul>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+</div>
+</body>
+</html>

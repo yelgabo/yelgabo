@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Virtual Functions &amp; Polymorphism — Interview Guide</title>
+<style>
+  :root {
+    --paper: #f7f8fa;
+    --ink: #1a1f2b;
+    --ink-soft: #4a5468;
+    --accent: #00599c;        /* C++ brand blue */
+    --accent-soft: #e3eef7;
+    --trap-bg: #fdf3e3;
+    --trap-border: #d9932c;
+    --trap-ink: #9a6414;
+    --quote-bg: #eef3f8;
+    --code-bg: #232733;
+    --code-ink: #e8eaf0;
+    --kw: #7aa2f7;
+    --str: #9ece6a;
+    --com: #6b7089;
+    --type: #e0af68;
+    --rule: #d8dce4;
+    --card: #ffffff;
+  }
+  :root[data-theme="dark"] {
+    --paper: #14161c;
+    --ink: #e8eaf0;
+    --ink-soft: #9aa3b8;
+    --accent: #5b9fd8;
+    --accent-soft: #14283c;
+    --trap-bg: #2a2113;
+    --trap-ink: #e6b45e;
+    --quote-bg: #16222e;
+    --code-bg: #1b1e28;
+    --rule: #2b303c;
+    --card: #1c1f28;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-size: 16px;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px 80px; }
+
+  header.masthead {
+    border-bottom: 3px solid var(--ink);
+    padding: 48px 0 24px;
+    margin-bottom: 8px;
+  }
+  .eyebrow {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 10px;
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 40px);
+    line-height: 1.15;
+    margin: 0 0 12px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .subtitle { color: var(--ink-soft); margin: 0; max-width: 60ch; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; font-size: 14px; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin: 24px 0 40px;
+  }
+  nav.toc p {
+    margin: 0 0 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  nav.toc ol {
+    margin: 0; padding: 0 0 0 1.4em;
+    columns: 2; column-gap: 32px;
+    font-size: 14.5px;
+  }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+  @media (max-width: 560px) { nav.toc ol { columns: 1; } }
+
+  section { margin-top: 56px; }
+  h2 {
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    margin: 0 0 4px;
+    padding-top: 8px;
+  }
+  h2 .num {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color: var(--accent);
+    font-weight: 700;
+    margin-right: 10px;
+  }
+  h2::after {
+    content: "";
+    display: block;
+    width: 56px; height: 3px;
+    background: var(--accent);
+    margin-top: 8px;
+  }
+  h3 { font-size: 18px; margin: 28px 0 6px; }
+  p { margin: 12px 0; }
+  strong { font-weight: 700; }
+  ul, ol { padding-left: 1.3em; }
+  li { margin: 6px 0; }
+
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.88em;
+    background: var(--accent-soft);
+    color: var(--ink);
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  pre {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    border-radius: 8px;
+    padding: 16px 18px;
+    overflow-x: auto;
+    font-size: 13.5px;
+    line-height: 1.55;
+    margin: 16px 0;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  .kw  { color: var(--kw); }
+  .str { color: var(--str); }
+  .com { color: var(--com); font-style: italic; }
+  .typ { color: var(--type); }
+
+  .trap {
+    background: var(--trap-bg);
+    border-left: 4px solid var(--trap-border);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 18px 0;
+  }
+  .trap .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--trap-ink);
+    display: block;
+    margin-bottom: 4px;
+  }
+  .trap p:first-of-type { margin-top: 0; }
+  .trap p:last-child { margin-bottom: 0; }
+
+  .oneliner {
+    background: var(--quote-bg);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 18px 0;
+    font-style: italic;
+  }
+  .oneliner .tag {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    font-style: normal;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .memfig {
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 14px;
+    margin: 16px 0;
+  }
+  .memfig svg { width: 100%; height: auto; display: block; }
+
+  .theme-toggle {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 10;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid var(--rule);
+    background: var(--card);
+    color: var(--ink);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  @media print { .theme-toggle { display: none; } }
+
+  .layout-diagram {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    white-space: pre;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 13.5px;
+    line-height: 1.5;
+    overflow-x: auto;
+    margin: 16px 0;
+    color: var(--ink);
+  }
+
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14.5px; }
+  th, td { border: 1px solid var(--rule); padding: 8px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding-left: 28px; position: relative; }
+  .checklist li::before {
+    content: "☐";
+    position: absolute; left: 4px;
+    color: var(--accent);
+    font-size: 15px;
+  }
+
+  .backtop { display: block; margin-top: 28px; font-size: 13px; }
+  .backtop a { color: var(--ink-soft); text-decoration: none; }
+  .backtop a:hover { color: var(--accent); }
+
+  @media print {
+    body { background: #fff; font-size: 12px; }
+    pre { white-space: pre-wrap; }
+    nav.toc, .backtop { display: none; }
+    section { margin-top: 28px; break-inside: avoid-page; }
+  }
+</style>
+<script>
+(function () {
+  var t = null;
+  try { t = localStorage.getItem('theme'); } catch (e) {}
+  if (t !== 'dark' && t !== 'light') {
+    t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  document.documentElement.dataset.theme = t;
+})();
+function updateThemeBtn() {
+  var b = document.getElementById('themeBtn');
+  if (b) b.textContent = document.documentElement.dataset.theme === 'dark' ? '\u2600' : '\u263E';
+}
+function toggleTheme() {
+  var r = document.documentElement;
+  r.dataset.theme = (r.dataset.theme === 'dark') ? 'light' : 'dark';
+  try { localStorage.setItem('theme', r.dataset.theme); } catch (e) {}
+  updateThemeBtn();
+}
+</script>
+</head>
+<body>
+<button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle dark mode">&#9790;</button>
+<script>updateThemeBtn();</script>
+<div class="wrap">
+
+<header class="masthead" id="top">
+  <p class="eyebrow">C++ Interview Prep · Deep Dive</p>
+  <h1>Virtual Functions &amp; Polymorphism</h1>
+  <p class="subtitle">The complete guide, taught from scratch. Read top to bottom — each section builds on the last.</p>
+  <div class="legend">
+    <span>⚠️ interview trap</span>
+    <span>💬 one-liner worth saying verbatim</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#s1">Static vs Dynamic Binding</a></li>
+    <li><a href="#s2">Indirection &amp; Slicing</a></li>
+    <li><a href="#s3">vtables and vptrs</a></li>
+    <li><a href="#s4">The Three-Phase Call Model</a></li>
+    <li><a href="#s5">override and final</a></li>
+    <li><a href="#s6">Virtual Destructors</a></li>
+    <li><a href="#s7">Virtuals in Constructors</a></li>
+    <li><a href="#s8">Access Control &amp; NVI</a></li>
+    <li><a href="#s9">Pure Virtuals &amp; Abstract Classes</a></li>
+    <li><a href="#s10">Performance &amp; Devirtualization</a></li>
+    <li><a href="#s11">Multiple Inheritance Mechanics</a></li>
+    <li><a href="#s12">The Complete Memory Picture</a></li>
+    <li><a href="#s13">dynamic_cast and RTTI</a></li>
+    <li><a href="#s14">Cheat Sheet</a></li>
+  </ol>
+</nav>
+
+<!-- ==================== 1 ==================== -->
+<section id="s1">
+  <h2><span class="num">01</span>The Core Problem: Static vs Dynamic Binding</h2>
+  <p>Every function call must be resolved to an actual function. C++ has two ways:</p>
+  <ul>
+    <li><strong>Static binding</strong> (default): the compiler picks the function at compile time, based on the <strong>static type</strong> — the declared type of the expression.</li>
+    <li><strong>Dynamic binding</strong>: the function is picked at runtime, based on the <strong>dynamic type</strong> — the actual type of the object being pointed/referred to.</li>
+  </ul>
+<pre><code><span class="kw">struct</span> <span class="typ">Base</span> {
+    <span class="kw">void</span> f()         { std::cout &lt;&lt; <span class="str">"Base::f\n"</span>; }   <span class="com">// non-virtual: static</span>
+    <span class="kw">virtual void</span> g() { std::cout &lt;&lt; <span class="str">"Base::g\n"</span>; }   <span class="com">// virtual: dynamic</span>
+};
+<span class="kw">struct</span> <span class="typ">Derived</span> : <span class="typ">Base</span> {
+    <span class="kw">void</span> f()          { std::cout &lt;&lt; <span class="str">"Derived::f\n"</span>; }  <span class="com">// HIDES Base::f</span>
+    <span class="kw">void</span> g() <span class="kw">override</span> { std::cout &lt;&lt; <span class="str">"Derived::g\n"</span>; }  <span class="com">// OVERRIDES Base::g</span>
+};
+
+<span class="typ">Base</span>* p = <span class="kw">new</span> <span class="typ">Derived</span>();
+p-&gt;f();   <span class="com">// "Base::f"    — static type of p is Base*</span>
+p-&gt;g();   <span class="com">// "Derived::g" — dynamic type of *p is Derived</span></code></pre>
+  <p>A same-signature <em>non-virtual</em> function in a derived class is called <strong>redefining</strong> or <strong>hiding</strong> — not overriding. It substitutes the function only when called through the derived type.</p>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Static type drives lookup and overload resolution; dynamic type drives dispatch."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 2 ==================== -->
+<section id="s2">
+  <h2><span class="num">02</span>Dispatch Requires Indirection: Pointers, References, and Slicing</h2>
+  <p>Dynamic dispatch only happens through a <strong>pointer or reference</strong> to base. A base object <em>by value</em> can never behave polymorphically:</p>
+<pre><code><span class="typ">Derived</span> d;
+
+<span class="typ">Base</span> b = d;    <span class="com">// copy-constructs a Base from d's Base subobject: SLICING</span>
+b.g();         <span class="com">// "Base::g" — b IS a Base, nothing to dispatch to</span>
+
+<span class="typ">Base</span>&amp; r = d;   <span class="com">// no copy; r refers to the actual Derived</span>
+r.g();         <span class="com">// "Derived::g"</span></code></pre>
+  <div class="trap"><span class="tag">⚠️ Trap — the mechanism behind slicing</span>
+  <p>Why does the sliced object dispatch to Base? The copy constructor <code>Base(const Base&amp;)</code> copies only Base's members, and <strong>every constructor installs its own class's vtable pointer</strong>. The new object's identity is Base, full stop. Slicing isn't just "data got dropped" — the object's dynamic type was rewritten.</p></div>
+  <p>Slicing also happens when passing by value:</p>
+<pre><code><span class="kw">void</span> byValue(<span class="typ">Base</span> b) { b.g(); }   <span class="com">// always "Base::g", whatever you pass</span>
+<span class="kw">void</span> byRef(<span class="typ">Base</span>&amp; b)  { b.g(); }   <span class="com">// dispatches properly</span></code></pre>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Polymorphism requires indirection; by-value slices."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 3 ==================== -->
+<section id="s3">
+  <h2><span class="num">03</span>The Machinery: vtables and vptrs</h2>
+  <p><strong>vtable</strong> (virtual table): a per-<strong>class</strong> static array of function pointers, one slot per virtual function in the hierarchy, built at compile time.</p>
+  <p><strong>vptr</strong> (virtual pointer): a hidden per-<strong>object</strong> member (8 bytes on 64-bit) pointing to its class's vtable. Set by the constructor.</p>
+  <p>For <code>p-&gt;g()</code> where <code>g</code> is virtual:</p>
+  <ol>
+    <li>Load the vptr from the object <code>*p</code>.</li>
+    <li>Load the function pointer from the vtable at <code>g</code>'s <strong>fixed slot index</strong> (known at compile time, e.g. <code>vtable[2]</code>).</li>
+    <li>Indirect call through it.</li>
+  </ol>
+  <div class="trap"><span class="tag">⚠️ Trap — "the vtable is indexed, not searched"</span>
+  <p>There is no runtime lookup, no "check derived, fall back to base." If <code>Derived</code> overrides <code>g</code>, its vtable slot for <code>g</code> holds <code>&amp;Derived::g</code>; if it doesn't override, that same slot holds <code>&amp;Base::g</code>. The decision was baked in when the compiler generated Derived's vtable. Dispatch is O(1) always.</p></div>
+  <h3>Costs of a virtual call vs a direct call</h3>
+  <ul>
+    <li>Two dependent memory loads + one indirect branch (small).</li>
+    <li><strong>Lost inlining</strong> — the compiler can't see through the indirect call, losing inlining and every optimization downstream. Usually the dominant cost.</li>
+    <li>Branch prediction: fine if the call site sees mostly one type; suffers if it sees many (megamorphic).</li>
+    <li>+8 bytes per object (vptr); one vtable per class (shared, negligible).</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"The vtable is indexed, not searched — dispatch is O(1) and the real price is lost inlining."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 4 ==================== -->
+<section id="s4">
+  <h2><span class="num">04</span>The Three-Phase Call Resolution Model</h2>
+  <p>Every call <code>expr.name(args)</code> resolves in three ordered phases. Most virtual-function traps live in the gaps between them.</p>
+  <ol>
+    <li><strong>Name lookup.</strong> Start at the scope of the <strong>static type</strong> of <code>expr</code>. Find the first scope containing <code>name</code>, collect all declarations of <code>name</code> in that scope, <strong>stop</strong>. Never look further up.</li>
+    <li><strong>Overload resolution.</strong> Among the functions found in phase 1, pick the best match for the arguments. Compile time, static types only.</li>
+    <li><strong>Dispatch.</strong> If the chosen function is virtual and the call is through pointer/reference: runtime vtable dispatch to the final override. Otherwise: direct call.</li>
+  </ol>
+
+  <h3>Trap A: Hiding kills base overloads</h3>
+<pre><code><span class="kw">struct</span> <span class="typ">Base</span> {
+    <span class="kw">virtual void</span> log(<span class="kw">int</span>)    { std::cout &lt;&lt; <span class="str">"int\n"</span>; }
+    <span class="kw">virtual void</span> log(<span class="kw">double</span>) { std::cout &lt;&lt; <span class="str">"double\n"</span>; }
+};
+<span class="kw">struct</span> <span class="typ">Derived</span> : <span class="typ">Base</span> {
+    <span class="kw">void</span> log(<span class="kw">int</span>) <span class="kw">override</span> { std::cout &lt;&lt; <span class="str">"derived int\n"</span>; }
+};
+
+<span class="typ">Derived</span> d;
+d.log(<span class="str">3.14</span>);   <span class="com">// "derived int" !!</span></code></pre>
+  <div class="trap"><span class="tag">⚠️ Trap A explained</span>
+  <p>Lookup starts in <code>Derived</code>, finds <code>log(int)</code>, stops — <code>Base::log(double)</code> is invisible. <code>3.14</code> converts to <code>int</code>. Declaring <em>any</em> <code>log</code> in Derived hides <strong>all</strong> base overloads of that name. Hiding is per-name, not per-signature.</p></div>
+  <p>Fix:</p>
+<pre><code><span class="kw">struct</span> <span class="typ">Derived</span> : <span class="typ">Base</span> {
+    <span class="kw">using</span> <span class="typ">Base</span>::log;          <span class="com">// un-hides all base overloads</span>
+    <span class="kw">void</span> log(<span class="kw">int</span>) <span class="kw">override</span>;
+};</code></pre>
+  <p>Through a base handle there's no problem: <code>Base&amp; r = d; r.log(3.14);</code> → lookup in Base sees both overloads → picks <code>log(double)</code> → not overridden → "double".</p>
+
+  <h3>Trap B: A wrong signature silently fails to override</h3>
+<pre><code><span class="kw">struct</span> <span class="typ">Base</span> { <span class="kw">virtual void</span> process(<span class="kw">int</span>); };
+<span class="kw">struct</span> <span class="typ">Derived</span> : <span class="typ">Base</span> {
+    <span class="kw">void</span> process(<span class="kw">long</span>);   <span class="com">// different signature: NOT an override</span>
+};
+
+<span class="typ">Base</span>* p = <span class="kw">new</span> <span class="typ">Derived</span>();
+p-&gt;process(<span class="str">42</span>);           <span class="com">// "base" — vtable slot still holds Base::process</span></code></pre>
+  <div class="trap"><span class="tag">⚠️ Trap B explained</span>
+  <p><code>Derived::process(long)</code> is an unrelated function sharing the name. Lookup for <code>p-&gt;process(42)</code> starts in Base (static type of <code>p</code>), the derived function is never even visible, and the vtable slot for <code>process(int)</code> was never replaced. Classic silent typo: <code>long</code> vs <code>int</code>, missing <code>const</code>, <code>&amp;</code> vs <code>&amp;&amp;</code>. The fix is the next section.</p></div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 5 ==================== -->
+<section id="s5">
+  <h2><span class="num">05</span><code>override</code> and <code>final</code></h2>
+<pre><code><span class="kw">struct</span> <span class="typ">Derived</span> : <span class="typ">Base</span> {
+    <span class="kw">void</span> process(<span class="kw">long</span>) <span class="kw">override</span>;  <span class="com">// COMPILE ERROR: does not override anything</span>
+    <span class="kw">void</span> process(<span class="kw">int</span>)  <span class="kw">override</span>;  <span class="com">// OK, verified</span>
+    <span class="kw">void</span> done() <span class="kw">final</span>;            <span class="com">// no class below may override done()</span>
+};
+
+<span class="kw">struct</span> <span class="typ">Leaf</span> <span class="kw">final</span> : <span class="typ">Derived</span> { };  <span class="com">// no class may derive from Leaf</span></code></pre>
+  <ul>
+    <li><code>override</code> asserts "a base virtual with this exact signature exists." It converts Trap B from silent wrong behavior into a compile error. <strong>Put it on every overriding function, no exceptions.</strong> Omitting it is a code-review red flag.</li>
+    <li><code>final</code> on a function: no further overriding. <code>final</code> on a class: no deriving.</li>
+    <li>⚠️ <code>final</code> is also an <strong>optimization enabler</strong> — see §10.</li>
+  </ul>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 6 ==================== -->
+<section id="s6">
+  <h2><span class="num">06</span>Virtual Destructors</h2>
+<pre><code><span class="kw">struct</span> <span class="typ">Base</span> {
+    <span class="kw">virtual void</span> f() {}
+    ~<span class="typ">Base</span>() {}                 <span class="com">// NOT virtual — bug incoming</span>
+};
+<span class="kw">struct</span> <span class="typ">Derived</span> : <span class="typ">Base</span> {
+    std::string* data = <span class="kw">new</span> std::string(<span class="str">1000</span>, <span class="str">'x'</span>);
+    ~<span class="typ">Derived</span>() { <span class="kw">delete</span> data; }
+};
+
+<span class="typ">Base</span>* p = <span class="kw">new</span> <span class="typ">Derived</span>();
+<span class="kw">delete</span> p;                      <span class="com">// undefined behavior</span></code></pre>
+  <p><code>delete p</code> with a non-virtual destructor statically binds to <code>~Base()</code>. <code>~Derived()</code> never runs; <code>data</code> leaks.</p>
+  <div class="trap"><span class="tag">⚠️ Two traps in one</span>
+  <p>Strictly this is <strong>undefined behavior</strong> (UB) per the standard — "leak" is the typical symptom, but say "UB" in the interview.</p>
+  <p>And: having <em>a</em> vtable doesn't save you — only functions declared <code>virtual</code> get vtable slots. The destructor call here never consults the vtable.</p></div>
+  <p><strong>Rule:</strong> any class with virtual functions gets <code>virtual ~Base() = default;</code>. Since the vptr already exists, it's <strong>free</strong> — no size or speed cost you weren't already paying.</p>
+  <p>(Related rule: a base class should have either a public virtual destructor, or a protected non-virtual one — the latter for interface classes never deleted through the base.)</p>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 7 ==================== -->
+<section id="s7">
+  <h2><span class="num">07</span>Virtual Calls in Constructors and Destructors</h2>
+<pre><code><span class="kw">struct</span> <span class="typ">Base</span> {
+    <span class="typ">Base</span>() { init(); }               <span class="com">// calls Base::init, NOT the override</span>
+    <span class="kw">virtual void</span> init() { std::cout &lt;&lt; <span class="str">"base init\n"</span>; }
+    <span class="kw">virtual</span> ~<span class="typ">Base</span>() = <span class="kw">default</span>;
+};
+<span class="kw">struct</span> <span class="typ">Derived</span> : <span class="typ">Base</span> {
+    <span class="kw">void</span> init() <span class="kw">override</span> { std::cout &lt;&lt; <span class="str">"derived init\n"</span>; }
+};
+
+<span class="typ">Derived</span> d;   <span class="com">// prints "base init"</span></code></pre>
+  <p>During <code>Base::Base()</code>, the object's dynamic type <strong>is Base</strong>: the vptr points at Base's vtable, and the Derived part doesn't exist yet. Dispatching to <code>Derived::init()</code> would touch uninitialized members, so the language dispatches to the constructor's own class. Destructors: same rule in reverse — by the time <code>~Base()</code> runs, the Derived part is already destroyed.</p>
+  <ul>
+    <li>⚠️ Calling a <strong>pure</strong> virtual function (even indirectly) from a constructor/destructor → "pure virtual call" → <code>std::terminate</code>.</li>
+    <li><strong>Rule:</strong> never call virtual functions from constructors/destructors expecting polymorphic behavior. If you need post-construction initialization, use a factory function that constructs first, then calls.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"The vptr always reflects the constructor or destructor currently running."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 8 ==================== -->
+<section id="s8">
+  <h2><span class="num">08</span>Access Control vs Dispatch — and the NVI Idiom</h2>
+  <div class="trap"><span class="tag">⚠️ The rule almost everyone gets wrong</span>
+  <p><strong>Access is checked at compile time against the static type. Dispatch happens at runtime. They don't talk to each other.</strong></p></div>
+<pre><code><span class="kw">struct</span> <span class="typ">Base</span> {
+    <span class="kw">virtual void</span> run() { std::cout &lt;&lt; <span class="str">"base\n"</span>; }
+    <span class="kw">virtual</span> ~<span class="typ">Base</span>() = <span class="kw">default</span>;
+};
+<span class="kw">struct</span> <span class="typ">Derived</span> : <span class="typ">Base</span> {
+<span class="kw">private</span>:
+    <span class="kw">void</span> run() <span class="kw">override</span> { std::cout &lt;&lt; <span class="str">"derived\n"</span>; }
+};
+
+<span class="typ">Derived</span> d;
+<span class="typ">Base</span>&amp; r = d;
+r.run();    <span class="com">// COMPILES, prints "derived" — access checked against Base (public)</span>
+d.run();    <span class="com">// COMPILE ERROR — access checked against Derived (private)</span></code></pre>
+  <p>Yes: through the base handle you just called a private function, legally. The same function is callable or not depending on which handle you hold.</p>
+  <p>This enables the <strong>non-virtual interface (NVI) idiom</strong> (a.k.a. template method pattern): the base class exposes a public non-virtual function that defines the fixed skeleton, and customization points are <strong>private virtuals</strong>:</p>
+<pre><code><span class="kw">class</span> <span class="typ">Widget</span> {
+<span class="kw">public</span>:
+    <span class="kw">void</span> draw() { validate(); doDraw(); clip(); }   <span class="com">// fixed contract</span>
+<span class="kw">private</span>:
+    <span class="kw">virtual void</span> doDraw() = <span class="str">0</span>;                      <span class="com">// override me, but only I call you</span>
+};</code></pre>
+  <p>Derived classes override <code>doDraw</code>; users can only enter through <code>draw()</code>. The base class keeps control of pre/post-conditions.</p>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 9 ==================== -->
+<section id="s9">
+  <h2><span class="num">09</span>Pure Virtual Functions &amp; Abstract Classes</h2>
+<pre><code><span class="kw">struct</span> <span class="typ">Shape</span> {
+    <span class="kw">virtual double</span> area() <span class="kw">const</span> = <span class="str">0</span>;   <span class="com">// pure virtual</span>
+    <span class="kw">virtual</span> ~<span class="typ">Shape</span>() = <span class="kw">default</span>;
+};</code></pre>
+  <ul>
+    <li><code>= 0</code> makes the function <strong>pure virtual</strong>; a class with any pure virtual is <strong>abstract</strong> — cannot be instantiated. Derived classes must implement all pure virtuals to become concrete.</li>
+    <li>A class with <em>only</em> pure virtuals (plus a virtual destructor) is C++'s "interface."</li>
+    <li>Odd but legal: a pure virtual function may still have a definition (<code>Shape::area() { ... }</code> out of line), callable as <code>Shape::area()</code> explicitly. Rarely used; know it exists.</li>
+    <li>Historical note: before pure virtuals, people wrote stub bodies in base classes so code would link. If your course notes mention that — it's obsolete.</li>
+  </ul>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 10 ==================== -->
+<section id="s10">
+  <h2><span class="num">10</span>Performance &amp; Devirtualization</h2>
+  <p><strong>Devirtualization</strong> = the compiler proving a virtual call has exactly one possible target, turning it into a direct (inlinable) call.</p>
+<pre><code><span class="kw">struct</span> <span class="typ">Base</span> { <span class="kw">virtual int</span> f() { <span class="kw">return</span> <span class="str">1</span>; } <span class="kw">virtual</span> ~<span class="typ">Base</span>() = <span class="kw">default</span>; };
+<span class="kw">struct</span> <span class="typ">Derived</span> <span class="kw">final</span> : <span class="typ">Base</span> { <span class="kw">int</span> f() <span class="kw">override</span> { <span class="kw">return</span> <span class="str">2</span>; } };
+
+<span class="kw">int</span> a(<span class="typ">Derived</span>&amp; d) { <span class="kw">return</span> d.f(); }    <span class="com">// devirtualized — because of `final`</span>
+<span class="kw">int</span> b(<span class="typ">Base</span>&amp; base) { <span class="kw">return</span> base.f(); }  <span class="com">// stays virtual — could be anything</span>
+
+<span class="kw">int</span> c() {
+    <span class="typ">Derived</span> d;
+    <span class="typ">Base</span>&amp; r = d;
+    <span class="kw">return</span> r.f();                       <span class="com">// devirtualized — compiler sees d's construction</span>
+}</code></pre>
+  <ul>
+    <li><strong>(c):</strong> dataflow — the compiler watched the object being built; dynamic type is provable. No keyword needed.</li>
+    <li><strong>(a):</strong> ⚠️ without <code>final</code>, a <code>Derived&amp;</code> might refer to some further-derived type that overrides <code>f</code> again — not safe to devirtualize. <code>final</code> (on the class, or on the specific function) guarantees no further override exists → direct call. <strong><code>final</code> on hot-path leaf classes is a real optimization, not just a design statement.</strong></li>
+    <li><strong>(b):</strong> can't be devirtualized normally. Advanced escape hatches (recognize, don't overclaim): link-time optimization (LTO — optimizing across source-file boundaries at link time) and profile-guided optimization (PGO — recompiling with runtime profile data) enable <em>speculative</em> devirtualization: <code>if (vptr == expected) inline_body(); else virtual_call();</code>.</li>
+  </ul>
+
+  <h3>Data layout: the hidden cost of polymorphic collections ⚠️</h3>
+  <p><code>std::vector&lt;std::unique_ptr&lt;Shape&gt;&gt;</code> with 10M elements in a hot loop is slow beyond dispatch itself. The vector's <em>pointers</em> are contiguous but the objects are scattered across the heap → a cache miss per element, and the hardware prefetcher (which excels at streaming contiguous memory) can't predict pointer targets.</p>
+  <p>Layout hierarchy, best to worst for cache behavior:</p>
+  <table>
+    <tr><th>#</th><th>Layout</th><th>Example</th><th>Wins when</th></tr>
+    <tr><td>1</td><td><strong>SoA</strong> — structure of arrays: one contiguous array per field</td><td><code>vector&lt;float&gt; radii;</code></td><td>Hot loops touch one or two fields across many objects. Every byte fetched is useful; loops vectorize (SIMD — single instruction, multiple data) trivially.</td></tr>
+    <tr><td>2</td><td><strong>AoS</strong> — array of structures: whole objects contiguous</td><td><code>vector&lt;Circle&gt;</code></td><td>You touch all fields of an object together. The natural layout.</td></tr>
+    <tr><td>3</td><td><strong>Array of pointers</strong> ("pointer soup"): contiguous pointers, scattered objects</td><td><code>vector&lt;unique_ptr&lt;Shape&gt;&gt;</code></td><td>Never wins on cache; only when you truly need runtime polymorphism per element.</td></tr>
+  </table>
+  <p>Fixes for the Shape problem, in order of impact:</p>
+  <ul>
+    <li><strong>One vector per concrete type</strong> (<code>vector&lt;Circle&gt;</code>, <code>vector&lt;Rect&gt;</code>, sum each): contiguous objects, each loop monomorphic → devirtualized, inlined, vectorized. Moves you from layout 3 to 2; the devirtualization win usually exceeds the cache win.</li>
+    <li><strong><code>std::variant&lt;Circle, Rect, ...&gt;</code> + <code>std::visit</code></strong>: one container, objects inline by value. Middle ground; each element pays for the largest alternative.</li>
+    <li><strong>Sort the pointer vector by concrete type</strong>: minimal surgery; makes the indirect branch predictable and improves locality.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Virtual dispatch per element costs less than what it prevents — inlining, vectorization, prefetching. If the hot loop is homogeneous per type, restructure so the compiler can see it."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 11 ==================== -->
+<section id="s11">
+  <h2><span class="num">11</span>Multiple Inheritance (MI) Mechanics</h2>
+<pre><code><span class="kw">struct</span> <span class="typ">A</span> { <span class="kw">virtual void</span> fa() {} <span class="kw">int</span> x; };
+<span class="kw">struct</span> <span class="typ">B</span> { <span class="kw">virtual void</span> fb() {} <span class="kw">int</span> y; };
+<span class="kw">struct</span> <span class="typ">C</span> : <span class="typ">A</span>, <span class="typ">B</span> { };</code></pre>
+  <p><strong>Layout — two vptrs:</strong></p>
+  <div class="layout-diagram">C object:
+┌──────────────┐ offset 0
+│ A's vptr     │
+│ A::x         │
+├──────────────┤ offset 16 (typical)
+│ B's vptr     │
+│ B::y         │
+└──────────────┘</div>
+  <p>Why can't they share one vptr? Code compiled against <code>B</code> knows nothing about <code>C</code> and expects a vptr at offset 0 <em>from wherever the <code>B*</code> points</em>. Each base subobject must be a valid object at its own address. (Single inheritance extends the base in place — one shared vptr — which is why this never came up before.)</p>
+  <h3>Pointer adjustment ⚠️</h3>
+<pre><code><span class="typ">C</span> c;
+<span class="typ">A</span>* pa = &amp;c;   <span class="com">// same address (A is at offset 0)</span>
+<span class="typ">B</span>* pb = &amp;c;   <span class="com">// compiler ADDS 16 — pb != (void*)&amp;c</span></code></pre>
+  <p>A derived-to-base conversion is <strong>not always a no-op — it can change the address.</strong> Consequences:</p>
+  <ul>
+    <li><code>static_cast&lt;C*&gt;(pb)</code> subtracts the offset back; the compiler knows both directions.</li>
+    <li>Never convert hierarchy pointers via <code>reinterpret_cast</code> or C casts through <code>void*</code> — they skip the adjustment and yield a garbage object.</li>
+    <li>When <code>C</code> overrides <code>fb()</code> and it's called through a <code>B*</code>, <code>this</code> must be adjusted from <code>B*</code> to <code>C*</code> before the body runs — the compiler inserts a <strong>thunk</strong> (tiny adjustment stub) in the vtable.</li>
+  </ul>
+  <p><strong>Virtual inheritance</strong> (<code>struct C : virtual A</code>) solves the diamond problem (one shared <code>A</code> subobject when two bases both inherit <code>A</code>) at the cost of runtime-located offsets. Know it exists and what problem it solves; don't volunteer implementation details.</p>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Each base must be a valid object at its own address — so multiple bases mean multiple vptrs, and pointer conversions become address adjustments."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 12 ==================== -->
+<section id="s12">
+  <h2><span class="num">12</span>The Complete Memory Picture</h2>
+  <p>Sections 3 and 11 in one image. Two hierarchies:</p>
+<pre><code><span class="kw">struct</span> <span class="typ">Base</span> { <span class="kw">virtual void</span> f(); <span class="kw">virtual void</span> g(); <span class="kw">int</span> x; };
+<span class="kw">struct</span> <span class="typ">D1</span> : <span class="typ">Base</span> { <span class="kw">void</span> f() <span class="kw">override</span>; <span class="kw">int</span> a; };
+<span class="kw">struct</span> <span class="typ">D2</span> : <span class="typ">Base</span> { <span class="kw">void</span> g() <span class="kw">override</span>; <span class="kw">double</span> b; };
+
+<span class="kw">struct</span> <span class="typ">A</span> { <span class="kw">virtual void</span> fa(); <span class="kw">int</span> x; };
+<span class="kw">struct</span> <span class="typ">B</span> { <span class="kw">virtual void</span> fb(); <span class="kw">int</span> y; };
+<span class="kw">struct</span> <span class="typ">C</span> : <span class="typ">A</span>, <span class="typ">B</span> { <span class="kw">void</span> fb() <span class="kw">override</span>; <span class="kw">int</span> z; };</code></pre>
+  <p>How to read it: the left column is <strong>per-object bytes</strong> (offsets and stored values, on the stack or heap at runtime); the right column is <strong>per-class vtables</strong> (fixed addresses in the executable's read-only data). An arrow means "the value stored in this vptr is that vtable's address." Addresses are illustrative.</p>
+
+  <div class="memfig">
+  <svg viewBox="0 0 680 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Memory layout of single and multiple inheritance objects with their vtables">
+  <defs><marker id="marr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#4a5468" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+
+  <text x="40" y="44" font-size="14" font-weight="600" fill="#1a1f2b" dominant-baseline="central">Single inheritance — Base, D1 : Base, D2 : Base</text>
+
+  <text x="40" y="76" font-size="14" font-weight="600" fill="#1a1f2b" dominant-baseline="central">Base b — 16 bytes</text>
+  <rect x="40" y="88" width="290" height="32" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="56" y="104" font-size="12" fill="#0F6E56" dominant-baseline="central">0</text>
+  <text x="200" y="104" font-size="14" font-weight="600" fill="#085041" text-anchor="middle" dominant-baseline="central">vptr = 0x5000</text>
+  <rect x="40" y="120" width="290" height="32" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="56" y="136" font-size="12" fill="#0F6E56" dominant-baseline="central">+8</text>
+  <text x="200" y="136" font-size="12" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">int x = 42</text>
+  <line x1="332" y1="104" x2="386" y2="110" stroke="#4a5468" stroke-width="1.5" marker-end="url(#marr)"/>
+  <rect x="390" y="76" width="250" height="100" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="515" y="98" font-size="14" font-weight="600" fill="#085041" text-anchor="middle" dominant-baseline="central">0x5000 — Base vtable</text>
+  <text x="515" y="126" font-size="12" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">[0] f → &amp;Base::f</text>
+  <text x="515" y="152" font-size="12" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">[1] g → &amp;Base::g</text>
+
+  <text x="40" y="206" font-size="14" font-weight="600" fill="#1a1f2b" dominant-baseline="central">D1 d1 — 16 bytes (overrides f, adds a)</text>
+  <rect x="40" y="218" width="290" height="32" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="56" y="234" font-size="12" fill="#534AB7" dominant-baseline="central">0</text>
+  <text x="200" y="234" font-size="14" font-weight="600" fill="#3C3489" text-anchor="middle" dominant-baseline="central">vptr = 0x5100</text>
+  <rect x="40" y="250" width="290" height="32" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="56" y="266" font-size="12" fill="#534AB7" dominant-baseline="central">+8</text>
+  <text x="200" y="266" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">int x = 42 (from Base)</text>
+  <rect x="40" y="282" width="290" height="32" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="56" y="298" font-size="12" fill="#534AB7" dominant-baseline="central">+12</text>
+  <text x="200" y="298" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">int a = 9 (D1's own)</text>
+  <line x1="332" y1="234" x2="386" y2="240" stroke="#4a5468" stroke-width="1.5" marker-end="url(#marr)"/>
+  <rect x="390" y="206" width="250" height="100" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="515" y="228" font-size="14" font-weight="600" fill="#3C3489" text-anchor="middle" dominant-baseline="central">0x5100 — D1 vtable</text>
+  <text x="515" y="256" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">[0] f → &amp;D1::f (override)</text>
+  <text x="515" y="282" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">[1] g → &amp;Base::g (inherited)</text>
+
+  <text x="40" y="346" font-size="14" font-weight="600" fill="#1a1f2b" dominant-baseline="central">D2 d2 — 24 bytes (overrides g, adds b)</text>
+  <rect x="40" y="358" width="290" height="32" rx="4" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+  <text x="56" y="374" font-size="12" fill="#993C1D" dominant-baseline="central">0</text>
+  <text x="200" y="374" font-size="14" font-weight="600" fill="#712B13" text-anchor="middle" dominant-baseline="central">vptr = 0x5200</text>
+  <rect x="40" y="390" width="290" height="32" rx="4" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+  <text x="56" y="406" font-size="12" fill="#993C1D" dominant-baseline="central">+8</text>
+  <text x="200" y="406" font-size="12" fill="#993C1D" text-anchor="middle" dominant-baseline="central">int x = 42 (from Base)</text>
+  <rect x="40" y="422" width="290" height="32" rx="4" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+  <text x="56" y="438" font-size="12" fill="#993C1D" dominant-baseline="central">+16</text>
+  <text x="200" y="438" font-size="12" fill="#993C1D" text-anchor="middle" dominant-baseline="central">double b = 2.5 (D2's own)</text>
+  <line x1="332" y1="374" x2="386" y2="380" stroke="#4a5468" stroke-width="1.5" marker-end="url(#marr)"/>
+  <rect x="390" y="346" width="250" height="100" rx="8" fill="#FAECE7" stroke="#993C1D" stroke-width="0.5"/>
+  <text x="515" y="368" font-size="14" font-weight="600" fill="#712B13" text-anchor="middle" dominant-baseline="central">0x5200 — D2 vtable</text>
+  <text x="515" y="396" font-size="12" fill="#993C1D" text-anchor="middle" dominant-baseline="central">[0] f → &amp;Base::f (inherited)</text>
+  <text x="515" y="422" font-size="12" fill="#993C1D" text-anchor="middle" dominant-baseline="central">[1] g → &amp;D2::g (override)</text>
+
+  <line x1="40" y1="490" x2="640" y2="490" stroke="#d8dce4" stroke-width="1"/>
+
+  <text x="40" y="520" font-size="14" font-weight="600" fill="#1a1f2b" dominant-baseline="central">Multiple inheritance — C : A, B (overrides fb, adds z)</text>
+
+  <text x="160" y="548" font-size="14" font-weight="600" fill="#1a1f2b" dominant-baseline="central">C c — 40 bytes</text>
+  <rect x="160" y="568" width="270" height="32" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="176" y="584" font-size="12" fill="#0F6E56" dominant-baseline="central">0</text>
+  <text x="310" y="584" font-size="14" font-weight="600" fill="#085041" text-anchor="middle" dominant-baseline="central">vptr = 0x6000</text>
+  <rect x="160" y="600" width="270" height="32" rx="4" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="176" y="616" font-size="12" fill="#0F6E56" dominant-baseline="central">+8</text>
+  <text x="310" y="616" font-size="12" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">int x = 42 (A part)</text>
+  <rect x="160" y="632" width="270" height="32" rx="4" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+  <text x="176" y="648" font-size="12" fill="#854F0B" dominant-baseline="central">+16</text>
+  <text x="310" y="648" font-size="14" font-weight="600" fill="#633806" text-anchor="middle" dominant-baseline="central">vptr = 0x6020</text>
+  <rect x="160" y="664" width="270" height="32" rx="4" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+  <text x="176" y="680" font-size="12" fill="#854F0B" dominant-baseline="central">+24</text>
+  <text x="310" y="680" font-size="12" fill="#854F0B" text-anchor="middle" dominant-baseline="central">int y = 7 (B part)</text>
+  <rect x="160" y="696" width="270" height="32" rx="4" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+  <text x="176" y="712" font-size="12" fill="#534AB7" dominant-baseline="central">+32</text>
+  <text x="310" y="712" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">int z = 5 (C's own)</text>
+
+  <text x="40" y="558" font-size="12" fill="#4a5468" dominant-baseline="central">C* pc = &amp;c</text>
+  <text x="40" y="574" font-size="12" fill="#4a5468" dominant-baseline="central">A* pa = &amp;c</text>
+  <line x1="45" y1="584" x2="156" y2="584" stroke="#4a5468" stroke-width="1.5" marker-end="url(#marr)"/>
+
+  <text x="40" y="634" font-size="12" fill="#4a5468" dominant-baseline="central">B* pb = &amp;c+16</text>
+  <line x1="45" y1="648" x2="156" y2="648" stroke="#4a5468" stroke-width="1.5" marker-end="url(#marr)"/>
+
+  <line x1="432" y1="584" x2="456" y2="588" stroke="#4a5468" stroke-width="1.5" marker-end="url(#marr)"/>
+  <rect x="460" y="552" width="180" height="88" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+  <text x="550" y="574" font-size="14" font-weight="600" fill="#085041" text-anchor="middle" dominant-baseline="central">vtable (A in C)</text>
+  <text x="550" y="596" font-size="12" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">at 0x6000</text>
+  <text x="550" y="620" font-size="12" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">[0] fa → &amp;A::fa</text>
+
+  <line x1="432" y1="648" x2="456" y2="700" stroke="#4a5468" stroke-width="1.5" marker-end="url(#marr)"/>
+  <rect x="460" y="666" width="180" height="88" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+  <text x="550" y="688" font-size="14" font-weight="600" fill="#633806" text-anchor="middle" dominant-baseline="central">vtable (B in C)</text>
+  <text x="550" y="710" font-size="12" fill="#854F0B" text-anchor="middle" dominant-baseline="central">at 0x6020</text>
+  <text x="550" y="734" font-size="12" fill="#854F0B" text-anchor="middle" dominant-baseline="central">[0] fb → thunk → C::fb</text>
+  </svg>
+  </div>
+
+  <p>What the diagram encodes — the summary of this whole guide's mechanics:</p>
+  <ul>
+    <li><strong>One strip per object, one table per class.</strong> A thousand D1 objects means a thousand strips each storing 0x5100, all pointing at the single D1 vtable.</li>
+    <li><strong>Size comes from alignment.</strong> D1 packs tight: vptr(8) + x(4) + a(4) = 16 bytes, <code>a</code> at +12. D2 is 24: <code>double b</code> needs 8-byte alignment, so 4 bytes of padding sit at +12 to push <code>b</code> to +16. Same member count, different sizes — member alignment and ordering decide. (Layouts here follow the Itanium C++ ABI — application binary interface — used by GCC and Clang; the C++ standard itself doesn't specify vtables at all.)</li>
+    <li><strong>All vtables share one slot layout</strong> (slot 0 = f, slot 1 = g), so <code>p-&gt;g()</code> compiles to "call slot 1" without knowing the class. Indexed, not searched.</li>
+    <li><strong>Mixed slots:</strong> D1's slot 1 still holds <code>&amp;Base::g</code> — inheritance was resolved when the compiler built the table, not at call time.</li>
+    <li><strong>Single inheritance extends in place:</strong> D1's first 16 bytes are byte-for-byte a valid Base, so <code>Base* p = &amp;d1</code> needs no adjustment and one vptr suffices.</li>
+    <li><strong>Multiple inheritance stacks subobjects:</strong> bytes 0–15 of C are a valid A, bytes 16–31 a valid B, and C's own <code>z</code> comes after both. B can't sit at offset 0 (A is there), hence the second vptr, the +16 on <code>pb</code>, and the thunk that fixes <code>this</code> before entering <code>C::fb</code>.</li>
+    <li><strong>Where things live:</strong> the strips exist at runtime (stack/heap, addresses vary per run); the vtables are constants in the executable's read-only data; member offsets and the +16 exist only as constants inside instructions. The vptr is the single piece of type information stored in data — the answer to the one question the compiler can't settle: "which class's override?"</li>
+  </ul>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 13 ==================== -->
+<section id="s13">
+  <h2><span class="num">13</span><code>dynamic_cast</code> and RTTI (brief)</h2>
+  <p>RTTI = run-time type information (the type data hanging off the vtable).</p>
+<pre><code><span class="typ">Base</span>* p = ...;
+<span class="kw">if</span> (<span class="kw">auto</span>* d = <span class="kw">dynamic_cast</span>&lt;<span class="typ">Derived</span>*&gt;(p)) { <span class="com">/* p really points to a Derived */</span> }
+<span class="com">// pointer form: returns nullptr on failure</span>
+<span class="com">// reference form: dynamic_cast&lt;Derived&amp;&gt;(r) throws std::bad_cast on failure</span></code></pre>
+  <ul>
+    <li>Requires the static type to be polymorphic (≥1 virtual function).</li>
+    <li>Cost: a runtime hierarchy walk — much slower than a virtual call.</li>
+    <li>Design smell if used for type-switching (<code>if Circle... else if Rect...</code>) — that's what virtual functions are for. Legitimate uses: cross-casting in MI, plugin boundaries.</li>
+    <li><code>typeid(*p)</code> yields the dynamic type's <code>std::type_info</code> for polymorphic types.</li>
+  </ul>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 13 ==================== -->
+<section id="s14">
+  <h2><span class="num">14</span>Cheat Sheet — One-Liners &amp; Rules</h2>
+
+  <h3>One-liners</h3>
+  <ul>
+    <li>"Static type drives lookup and overload resolution; dynamic type drives dispatch."</li>
+    <li>"Polymorphism requires indirection; by-value slices."</li>
+    <li>"The vtable is indexed, not searched — dispatch is O(1); the real price is lost inlining."</li>
+    <li>"Name lookup stops at the first scope where the name is found — hiding is per-name, not per-signature."</li>
+    <li>"The vptr always reflects the constructor currently running."</li>
+    <li>"Access is checked at compile time against the static type; dispatch is runtime. They don't interact."</li>
+    <li>"Each base must be valid at its own address — MI means multiple vptrs and address-adjusting conversions."</li>
+  </ul>
+
+  <h3>Rules</h3>
+  <ul>
+    <li><code>override</code> on every overriding function. Always.</li>
+    <li><code>virtual ~Base() = default;</code> in any class with virtual functions (it's free — the vptr already exists).</li>
+    <li>Never call virtuals from constructors/destructors expecting dispatch.</li>
+    <li><code>using Base::f;</code> in the derived class when overriding one of several overloads.</li>
+    <li>Deleting through a base pointer without a virtual destructor = <strong>UB</strong>, not just a leak.</li>
+    <li><code>final</code> on leaf classes/functions in hot paths = free devirtualization.</li>
+    <li>Prefer per-type containers or <code>variant</code> over <code>vector&lt;unique_ptr&lt;Base&gt;&gt;</code> in hot loops.</li>
+    <li><code>dynamic_cast</code> chains = design smell; that's virtual dispatch's job.</li>
+  </ul>
+
+  <h3>Trap checklist — what interviewers actually ask</h3>
+  <ul class="checklist">
+    <li>non-virtual call through base pointer → static binding</li>
+    <li>slicing via by-value copy/pass → base behavior, vptr rewritten by copy ctor</li>
+    <li>wrong signature + no <code>override</code> → silent hiding, base version runs</li>
+    <li>derived overload hides ALL base overloads of the name</li>
+    <li>non-virtual destructor + delete through base → UB</li>
+    <li>virtual call in constructor → dispatches to constructor's own class</li>
+    <li>private override callable through public base handle</li>
+    <li>MI: <code>B* pb = &amp;c</code> changes the address; two vptrs in the object</li>
+    <li>devirtualization: local objects yes, <code>final</code> yes, plain <code>Base&amp;</code> no</li>
+  </ul>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+</div>
+</body>
+</html>

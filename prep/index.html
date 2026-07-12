@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Interview Prep Guides</title>
+<style>
+  :root { --paper: #f7f8fa; --ink: #1a1f2b; --soft: #4a5468; --accent: #00599c; }
+  @media (prefers-color-scheme: dark) {
+    :root { --paper: #14161c; --ink: #e8eaf0; --soft: #9aa3b8; --accent: #5b9fd8; }
+  }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 16px; line-height: 1.65;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; padding: 56px 20px 80px; }
+  h1 { font-size: 28px; letter-spacing: -0.02em; margin: 0 0 6px; }
+  p.sub { color: var(--soft); margin: 0 0 32px; }
+  ol { padding-left: 1.4em; }
+  li { margin: 12px 0; }
+  a { color: var(--accent); text-decoration: none; font-weight: 600; }
+  a:hover { text-decoration: underline; }
+  li span { display: block; color: var(--soft); font-size: 14px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Interview Prep Guides</h1>
+  <p class="sub">C++ deep dives, taught from scratch.</p>
+  <ol>
+    <li>
+      <a href="cpp-virtual-functions.html">Virtual Functions &amp; Polymorphism</a>
+      <span>vtables, slicing, name hiding, virtual destructors, NVI, MI mechanics</span>
+    </li>
+    <li>
+      <a href="cpp-iterators-moves-concurrency.html">Iterators, Moves, Smart Pointers, Concurrency</a>
+      <span>iterator invalidation, move semantics, smart pointer internals, concurrency basics</span>
+    </li>
+    <li>
+      <a href="cpp-performance.html">Performance &amp; Optimization</a>
+      <span>latency numbers, cache mechanics, data layout, branches, vectorization, measurement</span>
+    </li>
+  </ol>
+</div>
+</body>
+</html>

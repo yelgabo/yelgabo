@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Move Semantics — The Complete Interview Guide</title>
+<style>
+  :root {
+    --paper: #f7f8fa;
+    --ink: #1a1f2b;
+    --ink-soft: #4a5468;
+    --accent: #00599c;
+    --accent-soft: #e3eef7;
+    --trap-bg: #fdf3e3;
+    --trap-border: #d9932c;
+    --trap-ink: #9a6414;
+    --quote-bg: #eef3f8;
+    --code-bg: #232733;
+    --code-ink: #e8eaf0;
+    --kw: #7aa2f7;
+    --str: #9ece6a;
+    --com: #6b7089;
+    --type: #e0af68;
+    --rule: #d8dce4;
+    --card: #ffffff;
+  }
+  :root[data-theme="dark"] {
+    --paper: #14161c;
+    --ink: #e8eaf0;
+    --ink-soft: #9aa3b8;
+    --accent: #5b9fd8;
+    --accent-soft: #14283c;
+    --trap-bg: #2a2113;
+    --trap-ink: #e6b45e;
+    --quote-bg: #16222e;
+    --code-bg: #1b1e28;
+    --rule: #2b303c;
+    --card: #1c1f28;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif; font-size: 16px; line-height: 1.65; }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px 80px; }
+  header.masthead { border-bottom: 3px solid var(--ink); padding: 48px 0 24px; margin-bottom: 8px; }
+  .eyebrow { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); margin: 0 0 10px; }
+  h1 { font-size: clamp(26px, 5vw, 38px); line-height: 1.15; margin: 0 0 12px; font-weight: 800; letter-spacing: -0.02em; }
+  .subtitle { color: var(--ink-soft); margin: 0; max-width: 62ch; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 18px; font-size: 14px; color: var(--ink-soft); }
+  nav.toc { background: var(--card); border: 1px solid var(--rule); border-radius: 8px; padding: 18px 22px; margin: 24px 0 40px; }
+  nav.toc p { margin: 0 0 8px; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+  nav.toc ol { margin: 0; padding: 0 0 0 1.4em; columns: 2; column-gap: 32px; font-size: 14.5px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+  nav.toc a { color: var(--ink); text-decoration: none; }
+  nav.toc a:hover { color: var(--accent); text-decoration: underline; }
+  @media (max-width: 560px) { nav.toc ol { columns: 1; } }
+  section { margin-top: 56px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; margin: 0 0 4px; padding-top: 8px; }
+  h2 .num { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; color: var(--accent); font-weight: 700; margin-right: 10px; }
+  h2::after { content: ""; display: block; width: 56px; height: 3px; background: var(--accent); margin-top: 8px; }
+  h3 { font-size: 18px; margin: 28px 0 6px; }
+  p { margin: 12px 0; }
+  ul, ol { padding-left: 1.3em; }
+  li { margin: 6px 0; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 0.88em; background: var(--accent-soft); color: var(--ink); padding: 1px 5px; border-radius: 4px; }
+  pre { background: var(--code-bg); color: var(--code-ink); border-radius: 8px; padding: 16px 18px; overflow-x: auto; font-size: 13.5px; line-height: 1.55; margin: 16px 0; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  .kw { color: var(--kw); } .str { color: var(--str); } .com { color: var(--com); font-style: italic; } .typ { color: var(--type); }
+  .trap { background: var(--trap-bg); border-left: 4px solid var(--trap-border); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 18px 0; }
+  .trap .tag { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--trap-ink); display: block; margin-bottom: 4px; }
+  .trap p:first-of-type { margin-top: 0; } .trap p:last-child { margin-bottom: 0; }
+  .oneliner { background: var(--quote-bg); border-left: 4px solid var(--accent); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 18px 0; font-style: italic; }
+  .oneliner .tag { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; font-style: normal; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 4px; }
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--rule); padding: 8px 10px; text-align: left; vertical-align: top; }
+  th { background: var(--accent-soft); }
+  .checklist { list-style: none; padding-left: 0; }
+  .checklist li { padding-left: 28px; position: relative; }
+  .checklist li::before { content: "☐"; position: absolute; left: 4px; color: var(--accent); font-size: 15px; }
+  .memfig { background: #fff; border: 1px solid var(--rule); border-radius: 8px; padding: 14px; margin: 16px 0; }
+  .memfig svg { width: 100%; height: auto; display: block; }
+  .backtop { display: block; margin-top: 28px; font-size: 13px; }
+  .backtop a { color: var(--ink-soft); text-decoration: none; }
+  .backtop a:hover { color: var(--accent); }
+  .theme-toggle { position: fixed; top: 14px; right: 14px; z-index: 10; width: 42px; height: 42px; border-radius: 50%; border: 1px solid var(--rule); background: var(--card); color: var(--ink); font-size: 18px; line-height: 1; cursor: pointer; }
+  .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  @media print { body { background: #fff; font-size: 12px; } pre { white-space: pre-wrap; } nav.toc, .backtop, .theme-toggle { display: none; } section { margin-top: 28px; } }
+</style>
+<script>
+(function () {
+  var t = null;
+  try { t = localStorage.getItem('theme'); } catch (e) {}
+  if (t !== 'dark' && t !== 'light') {
+    t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  document.documentElement.dataset.theme = t;
+})();
+function updateThemeBtn() {
+  var b = document.getElementById('themeBtn');
+  if (b) b.textContent = document.documentElement.dataset.theme === 'dark' ? '\u2600' : '\u263E';
+}
+function toggleTheme() {
+  var r = document.documentElement;
+  r.dataset.theme = (r.dataset.theme === 'dark') ? 'light' : 'dark';
+  try { localStorage.setItem('theme', r.dataset.theme); } catch (e) {}
+  updateThemeBtn();
+}
+</script>
+</head>
+<body>
+<button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle dark mode">&#9790;</button>
+<script>updateThemeBtn();</script>
+<div class="wrap">
+
+<header class="masthead" id="top">
+  <p class="eyebrow">C++ Interview Prep · Deep Dive</p>
+  <h1>Move Semantics</h1>
+  <p class="subtitle">The complete treatment: value categories, rvalue references, writing moves, compiler generation rules, copy elision, perfect forwarding, and a what-does-this-print trap gallery. Traps ⚠️, one-liners 💬.</p>
+  <div class="legend"><span>⚠️ interview trap</span><span>💬 one-liner worth saying verbatim</span></div>
+</header>
+
+<nav class="toc">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#s1">The Problem Moves Solve</a></li>
+    <li><a href="#s2">Value Categories</a></li>
+    <li><a href="#s3">Rvalue References &amp; Binding</a></li>
+    <li><a href="#s4">std::move &amp; the Moved-From State</a></li>
+    <li><a href="#s5">Writing Move Operations</a></li>
+    <li><a href="#s6">What the Compiler Generates</a></li>
+    <li><a href="#s7">noexcept &amp; the vector Contract</a></li>
+    <li><a href="#s8">Copy Elision: RVO &amp; NRVO</a></li>
+    <li><a href="#s9">Perfect Forwarding</a></li>
+    <li><a href="#s10">Moves in API Design</a></li>
+    <li><a href="#s11">Trap Gallery: What Does This Print?</a></li>
+    <li><a href="#s12">Cheat Sheet</a></li>
+  </ol>
+</nav>
+
+<!-- ==================== 1 ==================== -->
+<section id="s1">
+  <h2><span class="num">01</span>The Problem Moves Solve</h2>
+  <p>A <code>std::string</code>, <code>vector</code>, or any resource-owning object is a small <strong>handle</strong> (a pointer, a size, a capacity — say 24 bytes) plus a big <strong>resource</strong> on the heap. <em>Copying</em> means allocating a new resource and duplicating every byte. But when the source is about to die — a temporary, or something the caller has finished with — duplication is pure waste. A <strong>move</strong> copies just the handle and nulls the source: the resource changes owners without being touched.</p>
+  <div class="memfig">
+  <svg viewBox="0 0 680 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Before and after a move: the heap buffer changes owner, only the handle is copied">
+    <defs><marker id="marr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#4a5468" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+    <text x="40" y="46" font-size="14" font-weight="600" fill="#1a1f2b" dominant-baseline="central">Before</text>
+    <rect x="40" y="66" width="240" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+    <text x="160" y="84" font-size="14" font-weight="600" fill="#085041" text-anchor="middle" dominant-baseline="central">Buffer a</text>
+    <text x="160" y="104" font-size="12" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">data_ = 0x9000 · n_ = 32768</text>
+    <line x1="160" y1="118" x2="160" y2="216" stroke="#4a5468" stroke-width="1.5" marker-end="url(#marr)"/>
+    <rect x="40" y="220" width="240" height="46" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+    <text x="160" y="238" font-size="14" font-weight="600" fill="#633806" text-anchor="middle" dominant-baseline="central">heap: 0x9000</text>
+    <text x="160" y="256" font-size="12" fill="#854F0B" text-anchor="middle" dominant-baseline="central">32 KB of data</text>
+
+    <text x="400" y="46" font-size="14" font-weight="600" fill="#1a1f2b" dominant-baseline="central">After  Buffer b = std::move(a);</text>
+    <rect x="400" y="66" width="240" height="50" rx="8" fill="#E1F5EE" stroke="#0F6E56" stroke-width="0.5"/>
+    <text x="520" y="84" font-size="14" font-weight="600" fill="#085041" text-anchor="middle" dominant-baseline="central">Buffer a (moved-from)</text>
+    <text x="520" y="104" font-size="12" fill="#0F6E56" text-anchor="middle" dominant-baseline="central">data_ = nullptr · n_ = 0</text>
+    <rect x="400" y="132" width="240" height="50" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="0.5"/>
+    <text x="520" y="150" font-size="14" font-weight="600" fill="#3C3489" text-anchor="middle" dominant-baseline="central">Buffer b</text>
+    <text x="520" y="170" font-size="12" fill="#534AB7" text-anchor="middle" dominant-baseline="central">data_ = 0x9000 · n_ = 32768</text>
+    <line x1="520" y1="184" x2="520" y2="216" stroke="#4a5468" stroke-width="1.5" marker-end="url(#marr)"/>
+    <rect x="400" y="220" width="240" height="46" rx="8" fill="#FAEEDA" stroke="#854F0B" stroke-width="0.5"/>
+    <text x="520" y="238" font-size="14" font-weight="600" fill="#633806" text-anchor="middle" dominant-baseline="central">heap: 0x9000</text>
+    <text x="520" y="256" font-size="12" fill="#854F0B" text-anchor="middle" dominant-baseline="central">same 32 KB — untouched</text>
+    <text x="340" y="296" font-size="12" fill="#4a5468" text-anchor="middle" dominant-baseline="central">16 bytes of handle copied; 32,768 bytes of payload never moved anywhere</text>
+  </svg>
+  </div>
+  <p>Two design questions fall out of this, and the rest of the guide answers them: <strong>how does the language know</strong> when stealing is safe (value categories, §2–4), and <strong>how do types implement</strong> the steal (§5–7)?</p>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"A move is a copy of the handle and a promise about the source — the resource itself never moves."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 2 ==================== -->
+<section id="s2">
+  <h2><span class="num">02</span>Value Categories</h2>
+  <p>Every <em>expression</em> (not object — expression) has a value category. Three leaf categories:</p>
+  <table>
+    <tr><th>Category</th><th>Meaning</th><th>Examples</th><th>Steal from it?</th></tr>
+    <tr><td><strong>lvalue</strong></td><td>has identity, not expiring — you can take its address, it may be used again</td><td><code>x</code>, <code>obj.member</code>, <code>*p</code>, <code>arr[i]</code>, string literal</td><td>No</td></tr>
+    <tr><td><strong>prvalue</strong> (pure rvalue)</td><td>a fresh temporary with no identity yet</td><td><code>42</code>, <code>x + y</code>, <code>f()</code> returning by value, <code>Widget{}</code></td><td>Yes</td></tr>
+    <tr><td><strong>xvalue</strong> (expiring value)</td><td>has identity, but declared expiring</td><td><code>std::move(x)</code>, <code>f()</code> returning <code>T&amp;&amp;</code></td><td>Yes</td></tr>
+  </table>
+  <p>Two umbrella groupings you'll hear: <strong>glvalue</strong> (generalized lvalue) = lvalue ∪ xvalue (things with identity); <strong>rvalue</strong> = prvalue ∪ xvalue (things safe to steal from). The grid: identity? expiring? — lvalue is identity/not-expiring, xvalue is identity/expiring, prvalue is no-identity.</p>
+  <div class="trap"><span class="tag">⚠️ Trap — categories belong to expressions, and names are lvalues</span>
+  <p>A variable declared <code>Buffer&amp;&amp; r = ...</code> has an rvalue-reference <em>type</em>, but the expression <code>r</code> is an <strong>lvalue</strong> — it has a name, it persists. Type and value category are independent axes. This single fact explains why move constructors need <code>std::move</code> on their members (§5) and why <code>std::forward</code> exists (§9). If you internalize one thing from this section, it's this.</p></div>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"If it has a name, it's an lvalue — no matter what its type says."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 3 ==================== -->
+<section id="s3">
+  <h2><span class="num">03</span>Rvalue References &amp; Binding</h2>
+<pre><code><span class="kw">void</span> take(<span class="kw">const</span> std::string&amp; s);   <span class="com">// #1 binds to EVERYTHING</span>
+<span class="kw">void</span> take(std::string&amp;&amp; s);         <span class="com">// #2 binds to rvalues only</span>
+
+std::string name = <span class="str">"yel"</span>;
+take(name);              <span class="com">// lvalue  → #1</span>
+take(name + <span class="str">"!"</span>);        <span class="com">// prvalue → #2 (preferred over #1)</span>
+take(std::move(name));   <span class="com">// xvalue  → #2</span></code></pre>
+  <p>Binding rules that matter:</p>
+  <ul>
+    <li><code>T&amp;</code> binds to lvalues only. <code>const T&amp;</code> binds to <em>everything</em> (and extends a temporary's lifetime). <code>T&amp;&amp;</code> binds to rvalues only.</li>
+    <li>When both <code>const T&amp;</code> and <code>T&amp;&amp;</code> overloads exist, an rvalue argument <strong>prefers</strong> <code>T&amp;&amp;</code> — that preference is the entire dispatch mechanism of move semantics. Copy ctor vs move ctor is just this overload resolution.</li>
+    <li>This is how the library splits "must preserve the source" from "may gut the source" — two overloads, resolved at compile time, zero runtime dispatch.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Move semantics is just overload resolution: rvalues prefer &amp;&amp;, and &amp;&amp; overloads are licensed to steal."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 4 ==================== -->
+<section id="s4">
+  <h2><span class="num">04</span>std::move &amp; the Moved-From State</h2>
+<pre><code><span class="kw">template</span> &lt;<span class="kw">class</span> T&gt;
+<span class="kw">constexpr</span> std::remove_reference_t&lt;T&gt;&amp;&amp; move(T&amp;&amp; t) <span class="kw">noexcept</span> {
+    <span class="kw">return</span> <span class="kw">static_cast</span>&lt;std::remove_reference_t&lt;T&gt;&amp;&amp;&gt;(t);
+}</code></pre>
+  <ul>
+    <li>That's the whole implementation: <strong>a cast</strong>. Zero instructions at runtime. It changes an expression's value category from lvalue to xvalue so that overload resolution picks the <code>&amp;&amp;</code> path. Nothing is moved by <code>std::move</code> itself; a better name would have been <code>rvalue_cast</code>.</li>
+    <li><strong>Moved-from state:</strong> the standard's contract for library types is <em>"valid but unspecified"</em> — you may destroy it, assign to it, or call functions with no preconditions (<code>clear()</code>, <code>size()</code>), but you must not assume its contents. Your own types should honor the same contract (nulled pointers do it naturally).</li>
+    <li>⚠️ Use-after-move is not UB by itself for standard types — it reads unspecified values. Tools (clang-tidy <code>bugprone-use-after-move</code>) still flag it because it's almost always a logic bug.</li>
+  </ul>
+  <div class="trap"><span class="tag">⚠️ Trap — const kills moves, silently</span>
+  <p><code>const Widget c; Widget d = std::move(c);</code> compiles fine and <strong>copies</strong>. <code>std::move(c)</code> yields <code>const Widget&amp;&amp;</code>; the move ctor takes <code>Widget&amp;&amp;</code> (non-const — it must mutate the source to null it), which can't bind. Overload resolution falls back to the copy ctor's <code>const Widget&amp;</code>, which binds anything. No warning, no error, just a silent copy. Corollary: returning <code>const</code> values or storing to-be-moved data in <code>const</code> members pessimizes every move.</p></div>
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"std::move moves nothing — it's a cast that changes which overload wins."<br><br>"Moved-from means valid but unspecified: destroy it, assign to it, assume nothing else."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 5 ==================== -->
+<section id="s5">
+  <h2><span class="num">05</span>Writing Move Operations</h2>
+<pre><code><span class="kw">class</span> <span class="typ">Buffer</span> {
+    <span class="kw">char</span>*  data_ = <span class="kw">nullptr</span>;
+    size_t n_    = <span class="str">0</span>;
+<span class="kw">public</span>:
+    <span class="com">// move constructor: steal, then null the source</span>
+    Buffer(Buffer&amp;&amp; o) <span class="kw">noexcept</span>
+        : data_(std::exchange(o.data_, <span class="kw">nullptr</span>)),
+          n_(std::exchange(o.n_, <span class="str">0</span>)) {}
+
+    <span class="com">// move assignment: release own resource, steal, null the source</span>
+    Buffer&amp; <span class="kw">operator</span>=(Buffer&amp;&amp; o) <span class="kw">noexcept</span> {
+        <span class="kw">if</span> (<span class="kw">this</span> != &amp;o) {
+            <span class="kw">delete</span>[] data_;
+            data_ = std::exchange(o.data_, <span class="kw">nullptr</span>);
+            n_    = std::exchange(o.n_, <span class="str">0</span>);
+        }
+        <span class="kw">return</span> *<span class="kw">this</span>;
+    }
+};</code></pre>
+  <ul>
+    <li>⚠️ <strong>Inside the move ctor, <code>o</code> is an lvalue</strong> (§2: it has a name). So <code>data_(o.data_)</code> would copy the pointer but leave the source owning it too — double delete later. For class-type members you must write <code>member_(std::move(o.member_))</code>; for raw handles, <code>std::exchange(o.h, null_value)</code> steals and resets in one step. Forgetting <code>std::move</code> on class-type members silently copies them — the compiler won't warn.</li>
+    <li><strong>Self-move</strong> (<code>x = std::move(x)</code>): rare but reachable through aliased references; the <code>this != &amp;o</code> guard (or a swap-based implementation) keeps it from freeing the resource it's about to steal.</li>
+    <li>Leave the source valid: nulled pointer + zero size means its destructor and any assignment behave correctly.</li>
+    <li>Alternative style: implement move-assign as <code>swap(*this, o)</code> — the source's destructor cleans up your old resource. Simple and self-move-safe, at the cost of the resource living slightly longer.</li>
+    <li><strong>Rule of Zero first:</strong> if members are <code>vector</code>/<code>string</code>/<code>unique_ptr</code>, write none of this — the compiler-generated moves member-wise-move correctly. Hand-written moves are for classes owning raw resources.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Forget std::move on the members and you've written a copy constructor with extra steps."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 6 ==================== -->
+<section id="s6">
+  <h2><span class="num">06</span>What the Compiler Generates</h2>
+  <table>
+    <tr><th>You declare…</th><th>Copy ops</th><th>Move ops</th></tr>
+    <tr><td>nothing</td><td>generated</td><td>generated</td></tr>
+    <tr><td>a destructor (even <code>= default</code>)</td><td>generated (deprecated!)</td><td><strong>NOT generated</strong> ⚠️</td></tr>
+    <tr><td>copy ctor or copy assignment</td><td>the declared one; other still generated (deprecated)</td><td><strong>NOT generated</strong></td></tr>
+    <tr><td>move ctor or move assignment</td><td><strong>deleted</strong></td><td>the declared one only</td></tr>
+  </table>
+  <ul>
+    <li>The ⚠️ row is the classic silent pessimization: add <code>~Widget() = default;</code> (or a logging destructor) and every "move" of Widget quietly becomes a copy — code still compiles, still runs, just slower. Fix: also write <code>Widget(Widget&amp;&amp;) = default;</code> and <code>Widget&amp; operator=(Widget&amp;&amp;) = default;</code> (and the copies, for clarity). This is the <strong>Rule of Five</strong>: declare one of the five, declare (or <code>= default</code>/<code>= delete</code>) all five.</li>
+    <li>"Deprecated" above: generating copies in the presence of a user destructor is legacy behavior kept for compatibility — compilers warn under <code>-Wdeprecated-copy-dtor</code>.</li>
+    <li>Generated moves do <strong>member-wise move</strong> — correct for classes made of well-behaved members, which is why the <strong>Rule of Zero</strong> (own resources only via resource-managing members, declare nothing) is the target state.</li>
+    <li>Check your assumptions with <code>static_assert(std::is_nothrow_move_constructible_v&lt;Widget&gt;);</code> — cheap insurance in real codebases, and a great line to mention.</li>
+  </ul>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 7 ==================== -->
+<section id="s7">
+  <h2><span class="num">07</span>noexcept &amp; the vector Contract</h2>
+  <p>When a <code>vector&lt;Widget&gt;</code> reallocates, it must transfer N elements to the new block and still honor the <strong>strong exception guarantee</strong>: if anything throws mid-transfer, the vector must remain as it was. Copying supports that (source intact until success). Moving doesn't — a throw halfway leaves some elements gutted with no way back.</p>
+  <ul>
+    <li>So vector uses <code>std::move_if_noexcept</code>: elements are <strong>moved only if the move constructor is <code>noexcept</code></strong> (or if the type isn't copyable at all); otherwise they're <em>copied</em>.</li>
+    <li>⚠️ Consequence: forget <code>noexcept</code> on your move ctor and every vector growth deep-copies all N elements — a silent, order-of-magnitude regression that profiles as "time in copy constructor during push_back." Diagnosing exactly this is a plausible interview exercise for an optimization role.</li>
+    <li>Moves that only shuffle pointers and integers can't throw — marking them <code>noexcept</code> is both true and load-bearing. Defaulted moves of noexcept-movable members are automatically noexcept.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"noexcept on a move constructor isn't documentation — vector reads it and changes algorithm."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 8 ==================== -->
+<section id="s8">
+  <h2><span class="num">08</span>Copy Elision: RVO &amp; NRVO</h2>
+  <p>Better than a move is <strong>no operation at all</strong>: the compiler constructs the result directly in the caller's storage, so nothing is copied <em>or</em> moved.</p>
+<pre><code>std::string make_a() { <span class="kw">return</span> std::string(<span class="str">80</span>, <span class="str">'x'</span>); }  <span class="com">// RVO — guaranteed (C++17)</span>
+
+std::string make_b() {
+    std::string s(<span class="str">80</span>, <span class="str">'x'</span>);
+    process(s);
+    <span class="kw">return</span> s;                        <span class="com">// NRVO — near-universal, not guaranteed;</span>
+}                                    <span class="com">// falls back to an implicit MOVE if not applied</span>
+
+std::string make_c() {
+    std::string s(<span class="str">80</span>, <span class="str">'x'</span>);
+    <span class="kw">return</span> std::move(s);             <span class="com">// ⚠️ PESSIMIZATION — see below</span>
+}</code></pre>
+  <ul>
+    <li><strong>RVO</strong> (return value optimization): returning a <em>prvalue</em>. Since C++17 this is <strong>guaranteed copy elision</strong> — mandated by the language, works even for non-movable types. Zero copies, zero moves, always.</li>
+    <li><strong>NRVO</strong> (named return value optimization): returning a local <em>by name</em>. Permitted, near-universal in practice, but not guaranteed. Where it can't apply (e.g. different locals returned on different paths), the return is automatically treated as a move — you never need to ask for it.</li>
+    <li>⚠️ <code>return std::move(local);</code>: the expression is no longer a plain name, so NRVO is <strong>disqualified</strong> — you've forced the fallback (a move) in exchange for nothing. Best case you broke elision; worst case (non-movable type) you broke compilation. Compilers warn (<code>-Wpessimizing-move</code>). The exception where an explicit move in a return IS needed: returning a <em>member</em> or a <em>parameter</em> (<code>return std::move(pair.first);</code>), since those never qualify for NRVO.</li>
+    <li>Same principle receiving: <code>auto s = make_b();</code> constructs in place. Elision is why "just return by value" is the modern default — output parameters for performance are mostly a pre-2011 habit.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"The hierarchy is elide &gt; move &gt; copy — and return std::move(local) voluntarily trades the best for the middle."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 9 ==================== -->
+<section id="s9">
+  <h2><span class="num">09</span>Perfect Forwarding</h2>
+  <p>Generic wrappers (factories, <code>emplace_back</code>, <code>make_unique</code>) take arguments and hand them to something else. The goal: an lvalue argument arrives as an lvalue (gets copied), an rvalue arrives as an rvalue (gets moved) — no forced copies, no accidental steals.</p>
+<pre><code><span class="kw">template</span> &lt;<span class="kw">typename</span> T&gt;
+<span class="kw">void</span> wrapper(T&amp;&amp; arg) {                 <span class="com">// forwarding reference (deduced T)</span>
+    target(std::forward&lt;T&gt;(arg));       <span class="com">// restores the caller's value category</span>
+}</code></pre>
+  <ul>
+    <li><strong>Forwarding reference:</strong> <code>T&amp;&amp;</code> <em>where T is deduced</em> (template parameter, or <code>auto&amp;&amp;</code>). Deduction encodes the argument's category into T: lvalue <code>Widget</code> → <code>T = Widget&amp;</code>; rvalue → <code>T = Widget</code>.</li>
+    <li><strong>Reference collapsing</strong> makes the types work out: <code>&amp; + &amp;&amp; → &amp;</code>, <code>&amp;&amp; + &amp;&amp; → &amp;&amp;</code> (an lvalue reference anywhere in the stack wins). So <code>T&amp;&amp;</code> with <code>T = Widget&amp;</code> collapses to <code>Widget&amp;</code>.</li>
+    <li><strong><code>std::forward&lt;T&gt;(arg)</code></strong> = a <em>conditional</em> cast: casts <code>arg</code> (an lvalue — it has a name!) back to rvalue only if T says the caller passed an rvalue. <code>move</code> is unconditional; <code>forward</code> is conditional on T. Pairing: <strong>forward with forwarding references, move everywhere else</strong> — mixing them up either forces copies (forward misuse) or steals from callers' lvalues (move misuse ⚠️).</li>
+    <li>⚠️ <strong>Same syntax, different beast:</strong> <code>Widget&amp;&amp;</code> (concrete type — rvalue reference, binds rvalues only) vs <code>T&amp;&amp;</code>/<code>auto&amp;&amp;</code> (deduced — forwarding reference, binds anything). Favorite trick question. Also: <code>vector&lt;T&gt;::push_back(T&amp;&amp;)</code> is an rvalue reference, not forwarding — T was fixed by the class, not deduced by the call.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"forward is a conditional move: it re-applies whatever value category the caller used."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 10 ==================== -->
+<section id="s10">
+  <h2><span class="num">10</span>Moves in API Design</h2>
+  <h3>Sink parameters: pass by value, then move</h3>
+<pre><code><span class="kw">class</span> <span class="typ">Person</span> {
+    std::string name_;
+<span class="kw">public</span>:
+    Person(std::string name) : name_(std::move(name)) {}   <span class="com">// the modern idiom</span>
+};
+Person p1(<span class="str">"yel"</span>);           <span class="com">// temporary moved into param, moved into member: 0 copies</span>
+Person p2(existing_name);   <span class="com">// copied into param, moved into member: 1 copy (minimum possible)</span></code></pre>
+  <p>For parameters the function will <em>keep</em> (sinks), by-value + move gives optimal behavior for both call styles with one overload. The alternative (<code>const&amp;</code> + <code>&amp;&amp;</code> overload pair) saves one cheap move at the cost of overload explosion; perfect-forwarding constructors are the third option with their own traps. "By value and move for sinks" is the recommended default and a strong interview answer.</p>
+  <h3>The rest of the toolkit</h3>
+  <ul>
+    <li><strong>Move-only types</strong>: <code>unique_ptr</code>, <code>thread</code>, <code>fstream</code> — copying is deleted; ownership transfer must be explicit via <code>std::move</code>. Your own single-owner types should follow suit: delete copies, define moves.</li>
+    <li><strong>emplace</strong>: <code>v.emplace_back(a, b)</code> perfect-forwards constructor args and builds in place — no temporary at all, one better than <code>push_back(T{a,b})</code> (build + move).</li>
+    <li><strong>Moving into lambdas</strong> (C++14 init-capture): <code>[buf = std::move(buffer)]() { use(buf); }</code> — the way to hand a resource to a callback/thread without copying.</li>
+    <li><strong>Container moves are O(1)</strong>: moving a <code>vector</code> steals three pointers regardless of size. ⚠️ Exception: <code>std::string</code> under SSO (small string optimization — short strings live inside the object, ≤15 chars in libstdc++/libc++) <em>copies its bytes</em> on move; still cheap, but "moves are always free" is falsifiable and interviewers know it. Second caveat: moving doesn't shrink or free the source's capacity guarantees — moved-from is unspecified, don't reason about it.</li>
+  </ul>
+  <div class="oneliner"><span class="tag">💬 One-liner</span>"Sinks take by value and move — one signature, optimal for lvalues and rvalues alike."</div>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 11 ==================== -->
+<section id="s11">
+  <h2><span class="num">11</span>Trap Gallery: What Does This Print?</h2>
+  <p>The instrumented type interviewers use (write it from memory — it's also your debugging tool):</p>
+<pre><code><span class="kw">struct</span> <span class="typ">Noisy</span> {
+    Noisy()                        { puts(<span class="str">"default"</span>); }
+    Noisy(<span class="kw">const</span> Noisy&amp;)            { puts(<span class="str">"copy"</span>);    }
+    Noisy(Noisy&amp;&amp;) <span class="kw">noexcept</span>        { puts(<span class="str">"move"</span>);    }
+    Noisy&amp; <span class="kw">operator</span>=(<span class="kw">const</span> Noisy&amp;) { puts(<span class="str">"copy="</span>); <span class="kw">return</span> *<span class="kw">this</span>; }
+    Noisy&amp; <span class="kw">operator</span>=(Noisy&amp;&amp;) <span class="kw">noexcept</span> { puts(<span class="str">"move="</span>); <span class="kw">return</span> *<span class="kw">this</span>; }
+    ~Noisy()                       { puts(<span class="str">"dtor"</span>);    }
+};</code></pre>
+  <table>
+    <tr><th>Snippet</th><th>Prints</th><th>Why</th></tr>
+    <tr><td><code>Noisy b = a;</code></td><td>copy</td><td>a is an lvalue</td></tr>
+    <tr><td><code>Noisy b = std::move(a);</code></td><td>move</td><td>xvalue → move ctor wins</td></tr>
+    <tr><td><code>const Noisy c; Noisy d = std::move(c);</code></td><td><strong>copy</strong></td><td>const&amp;&amp; can't bind to Noisy&amp;&amp; → falls back to copy (§4)</td></tr>
+    <tr><td><code>Noisy make(){ Noisy n; return n; } auto e = make();</code></td><td><strong>default</strong> (only)</td><td>NRVO — constructed directly in e; no copy, no move (§8)</td></tr>
+    <tr><td>same, but <code>return std::move(n);</code></td><td>default, <strong>move</strong></td><td>std::move disqualified NRVO (§8)</td></tr>
+    <tr><td><code>auto f = make();</code> where make returns <code>Noisy{}</code></td><td>default</td><td>guaranteed elision of prvalues, C++17</td></tr>
+    <tr><td><code>void g(Noisy n); g(std::move(a));</code></td><td>move</td><td>moved into the parameter</td></tr>
+    <tr><td><code>S(Noisy n) : m_(n) {}</code></td><td>…copy</td><td>⚠️ n is an lvalue inside! needs m_(std::move(n))</td></tr>
+    <tr><td><code>v.push_back(a)</code> triggering growth, Noisy's move NOT noexcept</td><td>copy ×(N+1)</td><td>move_if_noexcept copies old elements (§7)</td></tr>
+    <tr><td>same, move IS noexcept</td><td>copy, move ×N</td><td>arg copied in, old elements moved</td></tr>
+  </table>
+  <p>Working these until they're boring is the single best prep for "what does this print" rounds — every row is a section of this guide compressed to one line.</p>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+<!-- ==================== 12 ==================== -->
+<section id="s12">
+  <h2><span class="num">12</span>Cheat Sheet</h2>
+  <ul class="checklist">
+    <li>Move = handle copy + source nulled; resource never relocates</li>
+    <li>Expressions have categories: lvalue (identity), prvalue (temporary), xvalue (declared expiring); rvalue = prvalue ∪ xvalue</li>
+    <li>If it has a name, it's an lvalue — including rvalue-reference variables and move-ctor parameters</li>
+    <li>std::move = unconditional cast to &amp;&amp;; std::forward&lt;T&gt; = conditional cast; forward with deduced T&amp;&amp; only</li>
+    <li>const anything can't be moved from — silent copy fallback</li>
+    <li>Move ops: std::exchange members, guard self-move, mark noexcept, leave source valid</li>
+    <li>Generation matrix: any dtor/copy declaration kills implicit moves; any move declaration deletes copies — Rule of Five or Rule of Zero</li>
+    <li>vector moves elements on growth only if move ctor is noexcept (move_if_noexcept)</li>
+    <li>Elide &gt; move &gt; copy: prvalue returns guaranteed elided (C++17); NRVO for named locals; never return std::move(local); DO move returned members/parameters</li>
+    <li>Sink parameters: pass by value + std::move into place</li>
+    <li>emplace_back forwards and constructs in place; init-capture [x = std::move(y)] moves into lambdas</li>
+    <li>Container moves O(1); SSO strings copy bytes on move; moved-from = valid but unspecified</li>
+    <li>Verify with static_assert(std::is_nothrow_move_constructible_v&lt;T&gt;)</li>
+  </ul>
+  <p class="backtop"><a href="#top">↑ back to top</a></p>
+</section>
+
+</div>
+</body>
+</html>

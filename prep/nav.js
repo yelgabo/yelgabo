@@ -3,6 +3,7 @@
 // switcher and an "on this page" list cloned from the page's own TOC.
 (function () {
     var GUIDES = [
+        ['cpp-fundamentals.html', 'Fundamentals'],
         ['cpp-virtual-functions.html', 'Virtual Functions & Polymorphism'],
         ['cpp-iterators-moves-concurrency.html', 'Iterators, Moves, Smart Pointers, Concurrency'],
         ['cpp-move-semantics.html', 'Move Semantics'],

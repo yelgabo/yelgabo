@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C++ Interview Prep Part 1 — Fundamentals, Corrected &amp; Modernized</title>
+<style>
+  :root { --paper:#f7f8fa; --ink:#1a1f2b; --ink-soft:#4a5468; --accent:#00599c; --accent-soft:#e3eef7;
+    --trap-bg:#fdf3e3; --trap-border:#d9932c; --trap-ink:#9a6414; --quote-bg:#eef3f8; --code-bg:#232733;
+    --code-ink:#e8eaf0; --kw:#7aa2f7; --str:#9ece6a; --com:#6b7089; --type:#e0af68; --rule:#d8dce4; --card:#ffffff; }
+  :root[data-theme="dark"] { --paper:#14161c; --ink:#e8eaf0; --ink-soft:#9aa3b8; --accent:#5b9fd8;
+    --accent-soft:#14283c; --trap-bg:#2a2113; --trap-ink:#e6b45e; --quote-bg:#16222e; --code-bg:#1b1e28;
+    --rule:#2b303c; --card:#1c1f28; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+    font-size:16px; line-height:1.65; }
+  .wrap { max-width:780px; margin:0 auto; padding:0 20px 80px; }
+  header.masthead { border-bottom:3px solid var(--ink); padding:48px 0 24px; margin-bottom:8px; }
+  .eyebrow { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12px;
+    letter-spacing:0.14em; text-transform:uppercase; color:var(--accent); margin:0 0 10px; }
+  h1 { font-size:clamp(26px,5vw,38px); line-height:1.15; margin:0 0 12px; font-weight:800; letter-spacing:-0.02em; }
+  .subtitle { color:var(--ink-soft); margin:0; max-width:62ch; }
+  nav.toc { background:var(--card); border:1px solid var(--rule); border-radius:8px; padding:18px 22px; margin:24px 0 40px; }
+  nav.toc p { margin:0 0 8px; font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:12px;
+    letter-spacing:0.12em; text-transform:uppercase; color:var(--ink-soft); }
+  nav.toc ol { margin:0; padding:0 0 0 1.4em; columns:2; column-gap:32px; font-size:14.5px; }
+  nav.toc li { margin:3px 0; break-inside:avoid; }
+  nav.toc a { color:var(--ink); text-decoration:none; }
+  nav.toc a:hover { color:var(--accent); text-decoration:underline; }
+  @media (max-width:560px) { nav.toc ol { columns:1; } }
+  section { margin-top:56px; }
+  h2 { font-size:24px; letter-spacing:-0.01em; margin:0 0 4px; padding-top:8px; }
+  h2 .num { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; color:var(--accent); font-weight:700; margin-right:10px; }
+  h2::after { content:""; display:block; width:56px; height:3px; background:var(--accent); margin-top:8px; }
+  p { margin:12px 0; }
+  ul,ol { padding-left:1.3em; }
+  li { margin:6px 0; }
+  code { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; font-size:0.88em;
+    background:var(--accent-soft); color:var(--ink); padding:1px 5px; border-radius:4px; }
+  pre { background:var(--code-bg); color:var(--code-ink); border-radius:8px; padding:16px 18px;
+    overflow-x:auto; font-size:13.5px; line-height:1.55; margin:16px 0; }
+  pre code { background:none; color:inherit; padding:0; font-size:inherit; }
+  .kw { color:var(--kw); } .str { color:var(--str); } .com { color:var(--com); font-style:italic; }
+  .backtop { display:block; margin-top:28px; font-size:13px; }
+  .backtop a { color:var(--ink-soft); text-decoration:none; }
+  .backtop a:hover { color:var(--accent); }
+  .theme-toggle { position:fixed; top:14px; right:14px; z-index:10; width:42px; height:42px; border-radius:50%;
+    border:1px solid var(--rule); background:var(--card); color:var(--ink); font-size:18px; line-height:1; cursor:pointer; }
+  .theme-toggle:hover { border-color:var(--accent); color:var(--accent); }
+  @media print { body { background:#fff; font-size:12px; } pre { white-space:pre-wrap; }
+    nav.toc,.backtop,.theme-toggle { display:none; } section { margin-top:28px; } }
+</style>
+<script>
+(function () {
+  var t = null;
+  try { t = localStorage.getItem('theme'); } catch (e) {}
+  if (t !== 'dark' && t !== 'light') {
+    t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  }
+  document.documentElement.dataset.theme = t;
+})();
+function updateThemeBtn() {
+  var b = document.getElementById('themeBtn');
+  if (b) b.textContent = document.documentElement.dataset.theme === 'dark' ? '\u2600' : '\u263E';
+}
+function toggleTheme() {
+  var r = document.documentElement;
+  r.dataset.theme = (r.dataset.theme === 'dark') ? 'light' : 'dark';
+  try { localStorage.setItem('theme', r.dataset.theme); } catch (e) {}
+  updateThemeBtn();
+}
+</script>
+</head>
+<body>
+<button class="theme-toggle" id="themeBtn" onclick="toggleTheme()" aria-label="Toggle dark mode">&#9790;</button>
+<script>updateThemeBtn();</script>
+<div class="wrap">
+
+<header class="masthead" id="top">
+  <p class="eyebrow">C++ Interview Prep &middot; Part 1</p>
+  <h1>Fundamentals — Corrected &amp; Modernized</h1>
+  <p class="subtitle">Your course notes rebuilt: wrong answers fixed, deprecated material replaced, and the missing high-yield topics added — RAII, exception guarantees, lambdas, the four casts, static, and the rapid-fire classics. Targets C++17/20.</p>
+</header>
+
+<nav class="toc">
+  <p>Contents</p>
+  <ol>
+    <li><a href="#s1">Paradigms &amp; OOP Fundamentals</a></li>
+    <li><a href="#s2">Access Control &amp; Friends</a></li>
+    <li><a href="#s3">Constructors</a></li>
+    <li><a href="#s4">Destructors, Copies, Moves — Rule of Three/Five/Zero</a></li>
+    <li><a href="#s5">Parameter Passing &amp; const</a></li>
+    <li><a href="#s6">Operator Overloading</a></li>
+    <li><a href="#s7">Inheritance &amp; Polymorphism</a></li>
+    <li><a href="#s8">Templates &amp; Type Aliases</a></li>
+    <li><a href="#s9">Compilation Model &amp; Namespaces</a></li>
+    <li><a href="#s10">Exceptions — Modernized</a></li>
+    <li><a href="#s11">Lambdas</a></li>
+    <li><a href="#s12">Rapid-Fire Classics</a></li>
+    <li><a href="#s13">Data Structures &amp; Recursion (your notes were fine — condensed)</a></li>
+    <li><a href="#s14">Testing (modernized)</a></li>
+    <li><a href="#s15">Modern C++ Checklist (say these, don&#x27;t get caught without them)</a></li>
+  </ol>
+</nav>
+
+<!-- ==================== 1 ==================== -->
+<section id="s1">
+  <h2><span class="num">01</span>Paradigms &amp; OOP Fundamentals</h2>
+<p><strong>Q: What constrains the performance of a computing system?</strong> Hardware efficiency, software/algorithmic efficiency, communication/interface overhead, processing power, memory/storage. (Interview add-on: cache behavior and memory bandwidth often dominate in practice.)</p>
+<p><strong>Q: Imperative vs declarative paradigm?</strong> Imperative: a program is a sequence of steps that mutate state. Declarative: you describe <em>what</em> to compute, not <em>how</em> (SQL, functional style).</p>
+<p><strong>Q: Two aspects of an object?</strong> State (member variables) and behavior (member functions).</p>
+<p><strong>Q: Objects vs classes?</strong> A class defines the structure/blueprint; objects are instances of a class.</p>
+<p><strong>Q: Three pillars of OOP?</strong></p>
+<ul>
+<li><strong>Encapsulation</strong> — hide implementation behind an interface; data + operations bundled.</li>
+<li><strong>Inheritance</strong> — derive new classes from existing ones, reuse and extend.</li>
+<li><strong>Polymorphism</strong> — one interface, many implementations; in C++ this means virtual functions + dynamic dispatch (runtime), or templates/overloading (compile time).</li>
+</ul>
+<p><strong>Q: Can you write imperative code in an OOP language?</strong> Yes. Paradigm is a style, not a language feature.</p>
+<p><strong>Q: struct vs class in C++?</strong> The <em>only</em> differences: <code>struct</code> members and inheritance default to <code>public</code>; <code>class</code> defaults to <code>private</code>. Otherwise identical — structs can have methods, constructors, virtual functions, everything.</p>
+<p><strong>Q: Can different struct types share member variable names?</strong> Yes. Names are scoped to the type.</p>
+<p><strong>Q: <code>.</code> vs <code>-&gt;</code> vs <code>::</code>?</strong></p>
+<ul>
+<li><code>.</code> — member access on an object (NOT a dereference).</li>
+<li><code>-&gt;</code> — dereference + member access on a pointer: <code>p-&gt;x</code> ≡ <code>(*p).x</code>.</li>
+<li><code>::</code> — scope resolution operator (namespaces, class statics, base-class members).</li>
+</ul>
+<p>Don&#x27;t call <code>.</code> a &quot;scope operator&quot; in an interview — it&#x27;s a member access operator.</p>
+<p><strong>Q: Block / local / global scope?</strong> Global: declared outside all functions/classes. Local: inside a block <code>{}</code>. Every local scope is a block scope; globals live at namespace scope.</p>
+<p><strong>Q: Can you declare a struct inside a struct?</strong> Yes — nested types. Access via <code>Outer::Inner</code>.</p>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 2 ==================== -->
+<section id="s2">
+  <h2><span class="num">02</span>Access Control &amp; Friends</h2>
+<p><strong>Q: private vs protected vs public?</strong></p>
+<ul>
+<li><code>private</code> — accessible only by the class&#x27;s own members and friends.</li>
+<li><code>protected</code> — also accessible by derived classes.</li>
+<li><code>public</code> — accessible by anyone.</li>
+</ul>
+<p><strong>Correction from your notes:</strong> access control is per-<strong>class</strong>, not per-object. A member function of <code>Foo</code> can access private members of <em>any</em> <code>Foo</code> object, not just <code>*this</code>. That&#x27;s why copy constructors can read <code>other</code>&#x27;s private fields.</p>
+<p><strong>Q: If all members are private, what&#x27;s the problem?</strong> Nothing outside the class can use it except friends. You need public member functions (or friends) to form an interface.</p>
+<p><strong>Q: How do you access an object&#x27;s state from outside?</strong> Public member functions (accessors/mutators) — or public members, but prefer a minimal public interface.</p>
+<p><strong>Q: What are friend functions? Do they break encapsulation?</strong> A <code>friend</code> declaration grants a non-member function (or another class) access to private/protected members. They don&#x27;t break encapsulation <em>if</em> they&#x27;re part of the class&#x27;s designed interface — the class author opts in.</p>
+<p><strong>Corrections from your notes:</strong></p>
+<ul>
+<li>Friends are <strong>not member functions</strong>.</li>
+<li>The access section (<code>public:</code>/<code>private:</code>) where the <code>friend</code> line appears is <strong>irrelevant</strong> — friendship isn&#x27;t subject to access specifiers.</li>
+<li>Classic use case: <code>operator&lt;&lt;</code>, since the left operand is <code>ostream</code>, not your class.</li>
+</ul>
+<p><strong>Q: If the class implementation changes, do friends need to change?</strong> Possibly — friends depend on internals, which is why you keep them few.</p>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 3 ==================== -->
+<section id="s3">
+  <h2><span class="num">03</span>Constructors</h2>
+<p><strong>Q: What initializes an object at creation?</strong> A constructor. It&#x27;s a member function with constraints: same name as the class, no return type (not even <code>void</code>).</p>
+<p><strong>Q: What&#x27;s called when you write <code>Foo f;</code>?</strong> The default constructor. If you declare <em>any</em> constructor, the compiler stops generating the default one (bring it back with <code>Foo() = default;</code>).</p>
+<p><strong>Q: Why is <code>Foo f();</code> wrong?</strong> Most vexing parse — it declares a <em>function</em> <code>f</code> returning <code>Foo</code>. Use <code>Foo f;</code> or <code>Foo f{};</code> (brace init, C++11, also prevents narrowing).</p>
+<p><strong>Q: Member initializer list?</strong></p>
+<pre><code>
+Foo::Foo(<span class="kw">int</span> n, std::string s) : n_(n), s_(std::move(s)) {}
+</code></pre>
+<p>Initializes members directly instead of default-constructing then assigning. <strong>Required</strong> for <code>const</code> members, references, and members without default constructors. Members initialize in <strong>declaration order</strong>, not list order. Values can be parameters or any expression.</p>
+<p>(Terminology: &quot;member initializer list&quot; — not <code>std::initializer_list</code>, which is the <code>{1,2,3}</code> container thing.)</p>
+<p><strong>Q: Constructor delegation and its limitation?</strong></p>
+<pre><code>
+Foo::Foo() : Foo(0) {}   <span class="com">// delegates to Foo(int)</span>
+</code></pre>
+<p>Limitation: a delegating constructor <strong>cannot also have a member initializer list</strong> — delegation must be the only thing before the body.</p>
+<p><strong>Q: What does <code>Foo(1, 2)</code> as an expression do?</strong> Constructs a temporary (anonymous) object — it does not &quot;re-run&quot; the constructor on an existing object.</p>
+<p><strong>Q: What is an abstract data type (ADT)?</strong> A type where users interact only through its interface; representation and implementation are hidden. Not every user-defined type is an ADT — only if internals are inaccessible.</p>
+<p><strong>Q: How do you separate interface from implementation?</strong> Header (<code>.h</code>) declares the interface; source (<code>.cpp</code>) defines it. (Exception: templates — see §8.)</p>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 4 ==================== -->
+<section id="s4">
+  <h2><span class="num">04</span>Destructors, Copies, Moves — Rule of Three/Five/Zero</h2>
+<p><strong>Q: What is a destructor?</strong> <code>~Foo()</code> — runs automatically when the object&#x27;s lifetime ends (scope exit, <code>delete</code>, container removal). No parameters, no return type, one per class.</p>
+<p><strong>Correction:</strong> destructors <em>can</em> be called explicitly (<code>obj.~Foo();</code>) — it&#x27;s just almost never done outside placement-new code. Say &quot;shouldn&#x27;t,&quot; not &quot;can&#x27;t.&quot;</p>
+<p><strong>Q: What is a copy constructor and why do you need one?</strong> <code>Foo(const Foo&amp; other)</code> — constructs a new object from an existing one. The compiler-generated one does <strong>memberwise copy</strong> (&quot;shallow&quot; only matters when members are raw pointers). If your class owns a raw resource, the default copy leaves two objects pointing at one resource → double delete.</p>
+<p><strong>Q: When must you overload the assignment operator?</strong> Same situation — owning raw resources. And you must handle <strong>self-assignment</strong> (<code>a = a</code>), or you&#x27;d free the resource before copying from it:</p>
+<pre><code>
+Foo&amp; <span class="kw">operator</span>=(<span class="kw">const</span> Foo&amp; other) {
+    <span class="kw">if</span> (<span class="kw">this</span> != &amp;other) { /* free, deep copy */ }
+    <span class="kw">return</span> *<span class="kw">this</span>;
+}
+</code></pre>
+<p><strong>Q: Rule of Three / Five / Zero?</strong></p>
+<ul>
+<li><strong>Three</strong> (C++98): if you need any of {destructor, copy ctor, copy assignment}, you need all three.</li>
+<li><strong>Five</strong> (C++11): add move constructor and move assignment:</li>
+</ul>
+<pre><code>
+Foo(Foo&amp;&amp; other) <span class="kw">noexcept</span>;
+Foo&amp; <span class="kw">operator</span>=(Foo&amp;&amp; other) <span class="kw">noexcept</span>;
+</code></pre>
+<ul>
+<li><strong>Zero</strong> (preferred): use <code>std::vector</code>, <code>std::string</code>, <code>std::unique_ptr</code> as members and write <strong>none of them</strong> — the compiler-generated ones are correct. This is the answer interviewers want.</li>
+</ul>
+<p><strong>Q: What is <code>std::move</code>?</strong> A cast to rvalue reference — it doesn&#x27;t move anything itself, it <em>permits</em> moving. After moving from an object, it&#x27;s in a valid-but-unspecified state.</p>
+<p><strong>Q: <code>= default</code> and <code>= delete</code>?</strong></p>
+<pre><code>
+Foo(<span class="kw">const</span> Foo&amp;) = <span class="kw">delete</span>;            <span class="com">// non-copyable</span>
+Foo&amp; <span class="kw">operator</span>=(<span class="kw">const</span> Foo&amp;) = <span class="kw">delete</span>;
+Foo() = <span class="kw">default</span>;                      <span class="com">// restore compiler-generated</span>
+</code></pre>
+<p><strong>Q: new/delete vs malloc/free?</strong> Both allocate from the heap/free store, but <code>new</code> calls constructors and <code>delete</code> calls destructors; <code>malloc</code>/<code>free</code> don&#x27;t. Never mix them. <strong>In modern code, avoid raw <code>new</code>/<code>delete</code> entirely:</strong></p>
+<p><strong>Q: Smart pointers?</strong></p>
+<ul>
+<li><code>std::unique_ptr&lt;T&gt;</code> — sole ownership, zero overhead, movable not copyable. Default choice. <code>auto p = std::make_unique&lt;T&gt;(args);</code></li>
+<li><code>std::shared_ptr&lt;T&gt;</code> — reference-counted shared ownership. <code>std::make_shared&lt;T&gt;(args)</code>. Costs atomic refcount ops.</li>
+<li><code>std::weak_ptr&lt;T&gt;</code> — non-owning observer of a <code>shared_ptr</code>; breaks reference cycles.</li>
+</ul>
+<p>Writing raw <code>new</code>/<code>delete</code> in interview code (outside implementing a data structure that requires it) is a red flag.</p>
+<p><strong>Q: What constructor runs for <code>Foo arr[10];</code>?</strong> The default constructor, for each element.</p>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 5 ==================== -->
+<section id="s5">
+  <h2><span class="num">05</span>Parameter Passing &amp; const</h2>
+<p><strong>Q: Why is pass-by-reference more efficient than by-value?</strong> By-value copies the argument (constructor + destructor cost); by-reference aliases the original. Idiom: <code>const T&amp;</code> for read-only, <code>T&amp;</code> to modify, plain <code>T</code> for cheap types (int, pointers, <code>string_view</code>, iterators) or when you&#x27;d copy anyway (then move from it).</p>
+<p><strong>Q: What does <code>const</code> do?</strong></p>
+<ul>
+<li><code>const T&amp;</code> param — callee can&#x27;t modify the argument.</li>
+<li><code>void f() const;</code> — member function can&#x27;t modify member variables (callable on const objects).</li>
+<li>Also: const locals, <code>constexpr</code> for compile-time constants.</li>
+</ul>
+<p><strong>Q: What is coercion?</strong> Implicit conversion — C++ auto-converts in well-defined cases (int→double, derived*→base*, single-arg constructors). Mark single-arg constructors <code>explicit</code> to prevent surprise conversions.</p>
+<p><strong>Q: Why do classes provide const and non-const overloads of the same function?</strong></p>
+<pre><code>
+T&amp;       <span class="kw">operator</span>[](size_t i)       { <span class="kw">return</span> data_[i]; }
+<span class="kw">const</span> T&amp; <span class="kw">operator</span>[](size_t i) <span class="kw">const</span> { <span class="kw">return</span> data_[i]; }
+</code></pre>
+<p>A const object can only call const member functions, so without the second overload <code>const vector</code> couldn&#x27;t be indexed at all. The const one returns a const reference so callers can&#x27;t mutate through it. This pair is the canonical &quot;const correctness&quot; example.</p>
+<p><strong>Q: What is <code>mutable</code>?</strong> Lets a member be modified inside const member functions — for members that aren&#x27;t part of the object&#x27;s <em>logical</em> state: caches, memo tables, mutexes (<code>mutable std::mutex m_;</code> so <code>get() const</code> can lock). The distinction to name: <strong>bitwise vs logical constness</strong> — const promises the <em>observable</em> state won&#x27;t change.</p>
+<p><strong>Q: References vs pointers?</strong> A reference must be initialized, can&#x27;t be null, and can&#x27;t be reseated to refer to something else; a pointer can be all three. References for &quot;always refers to something&quot; parameters; pointers when null/&quot;absent&quot; is meaningful or reseating is needed. (Under the hood a reference is typically a pointer — the difference is the rules the compiler enforces.)</p>
+<p><strong>Q: The four casts — when is each right?</strong></p>
+<ul>
+<li><code>static_cast</code> — the normal one: numeric conversions, up/down class hierarchy when you <em>know</em> the type, void*→T*. No runtime check.</li>
+<li><code>dynamic_cast</code> — checked downcast on polymorphic types; nullptr/throws on failure. Runtime cost.</li>
+<li><code>const_cast</code> — add/remove const. Legitimate only for interop with const-incorrect APIs; writing through it to a <em>originally-const</em> object is UB.</li>
+<li><code>reinterpret_cast</code> — reinterpret the bits (pointer↔integer, unrelated pointer types). Almost always paired with UB risk (strict aliasing); rare and deliberate.</li>
+<li>C-style casts <code>(T)x</code> try all of the above in order — they can silently do a <code>reinterpret_cast</code> or strip const, which is exactly why they&#x27;re banned in modern codebases. &quot;Greppable and intentional&quot; is why the named casts exist.</li>
+</ul>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 6 ==================== -->
+<section id="s6">
+  <h2><span class="num">06</span>Operator Overloading</h2>
+<p><strong>Q: What is operator overloading?</strong> Defining operators for user-defined types, as member functions or free (often friend) functions. Symmetric binary ops (<code>+</code>, <code>==</code>) are usually free functions; <code>=</code>, <code>[]</code>, <code>()</code>, <code>-&gt;</code> must be members.</p>
+<p><strong>Q: Why does <code>operator&lt;&lt;</code> return <code>ostream&amp;</code> (not <code>ostream</code>)?</strong> Two real reasons (your notes&#x27; answer was wrong): 1. Streams are <strong>non-copyable</strong> — returning by value wouldn&#x27;t compile. 2. Returning the reference enables <strong>chaining</strong>: <code>cout &lt;&lt; a &lt;&lt; b</code> is <code>operator&lt;&lt;(operator&lt;&lt;(cout, a), b)</code>.</p>
+<pre><code>
+std::ostream&amp; <span class="kw">operator</span>&lt;&lt;(std::ostream&amp; os, <span class="kw">const</span> Foo&amp; f) {
+    <span class="kw">return</span> os &lt;&lt; f.x();
+}
+</code></pre>
+<p><strong>Q: How do you make objects comparable?</strong> Classic: overload <code>==</code>, <code>&lt;</code>, etc. C++20: default the spaceship operator and get all six for free:</p>
+<pre><code>
+<span class="kw">auto</span> <span class="kw">operator</span>&lt;=&gt;(<span class="kw">const</span> Foo&amp;) <span class="kw">const</span> = <span class="kw">default</span>;  <span class="com">// also generates ==</span>
+</code></pre>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 7 ==================== -->
+<section id="s7">
+  <h2><span class="num">07</span>Inheritance &amp; Polymorphism</h2>
+<p><strong>Q: Do derived classes contain all base members?</strong> Yes — including private ones — but private base members aren&#x27;t directly <em>accessible</em> from the derived class (they&#x27;re still there in memory, reachable via protected/public base functions).</p>
+<p><strong>Q: What&#x27;s inherited access-wise with public inheritance?</strong> public→public, protected→protected, private→inaccessible. Protected pros/cons: derived classes get direct access, but that couples <em>every</em> descendant to the representation.</p>
+<p><strong>Q: What isn&#x27;t inherited?</strong> Constructors (but <code>using Base::Base;</code> inherits them since C++11), assignment operators (redeclared per class), destructors, friends.</p>
+<p><strong>Q: Base constructor invocation from derived?</strong></p>
+<pre><code>
+Derived::Derived(<span class="kw">int</span> n) : Base(n), extra_(0) {}
+</code></pre>
+<p>If you don&#x27;t call one explicitly, the base&#x27;s <strong>default constructor</strong> runs. Base members are initialized by the base constructor.</p>
+<p><strong>Q: Redefining vs overriding vs overloading?</strong></p>
+<ul>
+<li><strong>Overloading</strong> — same name, different parameters, same scope.</li>
+<li><strong>Redefining (hiding)</strong> — same signature in derived, base function <em>not</em> virtual. Statically bound; also hides all base overloads of that name.</li>
+<li><strong>Overriding</strong> — same signature, base function <code>virtual</code>. Dynamically bound through pointers/references.</li>
+</ul>
+<p>Call the hidden/overridden base version with <code>obj.Base::func();</code>.</p>
+<p><strong>Q: What is polymorphism mechanically in C++?</strong> Virtual functions + late (dynamic) binding: the call through a <code>Base*</code>/<code>Base&amp;</code> dispatches to the most-derived override at runtime (via vtable).</p>
+<p><strong>Q: Always use <code>override</code> (C++11):</strong></p>
+<pre><code>
+<span class="kw">struct</span> Derived : Base {
+    <span class="kw">void</span> f() <span class="kw">override</span>;   <span class="com">// compiler error if it doesn&#x27;t actually override</span>
+    <span class="kw">void</span> g() <span class="kw">final</span>;      <span class="com">// no further overriding</span>
+};
+</code></pre>
+<p>Not marking overrides is a code-review red flag; a signature typo silently <em>hides</em> instead of overrides.</p>
+<p><strong>Q: Why not make everything virtual?</strong> Virtual calls cost an indirection and block inlining; objects grow a vptr. Only pay for dynamic dispatch where you need it.</p>
+<p><strong>Q: Pure virtual functions / abstract classes?</strong></p>
+<pre><code>
+<span class="kw">struct</span> Shape { <span class="kw">virtual</span> <span class="kw">double</span> area() <span class="kw">const</span> = 0; <span class="kw">virtual</span> ~Shape() = <span class="kw">default</span>; };
+</code></pre>
+<p>A class with any pure virtual function is abstract — can&#x27;t be instantiated; derived classes must implement it. This replaces the old &quot;stub bodies for virtuals&quot; hack in your notes.</p>
+<p><strong>Q: What does &quot;a derived object has more than one type&quot; mean?</strong> A <code>Derived</code> is-a <code>Base</code>: usable anywhere a <code>Base</code> (pointer/reference) is expected. Never the reverse.</p>
+<p><strong>Q: What is the slicing problem?</strong> Assigning/passing a derived object <strong>by value</strong> as a base copies only the base subobject — derived data and dynamic behavior are sliced off. Avoid by using pointers/references (or smart pointers) to base. This is <em>why</em> polymorphism requires indirection.</p>
+<p><strong>Q: Why must destructors be virtual in polymorphic base classes?</strong> <code>delete basePtr;</code> where <code>basePtr</code> points to a <code>Derived</code> invokes only <code>~Base()</code> if it&#x27;s non-virtual → undefined behavior / leaked derived resources. Rule: any class with virtual functions gets <code>virtual ~Base() = default;</code>.</p>
+<p><strong>Q: If the base overloads <code>operator=</code> but the derived doesn&#x27;t?</strong> The derived class gets its own compiler-generated assignment, which calls the base&#x27;s overloaded one for the base subobject.</p>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 8 ==================== -->
+<section id="s8">
+  <h2><span class="num">08</span>Templates &amp; Type Aliases</h2>
+<p><strong>Q: Can you forward-declare a template class?</strong> <strong>Yes</strong> (your notes were wrong): <code>template &lt;typename T&gt; class Foo;</code> is valid.</p>
+<p><strong>Q: Why can&#x27;t templates live in separate .cpp files (normally)?</strong> The compiler must see the full template <em>definition</em> at each instantiation point to generate code for that <code>T</code>. So template definitions go in headers (or you use explicit instantiation for a fixed set of types).</p>
+<p><strong>Q: typedef vs using?</strong> Prefer <code>using</code> (C++11):</p>
+<pre><code>
+<span class="kw">using</span> NodePtr = Node*;                         <span class="com">// same as typedef</span>
+<span class="kw">template</span> &lt;<span class="kw">class</span> T&gt; <span class="kw">using</span> Vec = std::vector&lt;T&gt;; <span class="com">// alias template — typedef can&#x27;t do this</span>
+</code></pre>
+<p><strong>Q: What actually happens when a template is used?</strong> The compiler <strong>instantiates</strong> it — stamps out real code for that exact <code>T</code>, per translation unit (the linker deduplicates). Consequences worth naming: each distinct <code>T</code> is a separate compiled function (code size and compile time scale with instantiation count — a real cost in big codebases), errors surface at instantiation point (concepts in C++20 exist to move them to the call site with readable messages), and <strong>specialization</strong> exists — you can provide a hand-written version for a specific type (<code>template&lt;&gt; struct Hash&lt;MyKey&gt; {...}</code>, which is exactly how <code>std::hash</code> is extended for your own key types).</p>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 9 ==================== -->
+<section id="s9">
+  <h2><span class="num">09</span>Compilation Model &amp; Namespaces</h2>
+<p><strong>Q: Compiler vs linker?</strong> Compiler translates each translation unit (.cpp after preprocessing) into object code. Linker combines object files + libraries into an executable, resolving symbols. &quot;It compiles but won&#x27;t link&quot; = declaration existed (header) but no definition was linked in.</p>
+<p><strong>Q: <code>#include &quot;foo.h&quot;</code> vs <code>#include &lt;vector&gt;</code>?</strong> Quotes: search local/project dirs first (your headers). Angle brackets: system/library include paths. <code>#include</code> is preprocessor text substitution — which is why including a header satisfies the compiler but doesn&#x27;t provide linked definitions.</p>
+<p><strong>Q: Why separate compilation?</strong> Header reuse across files; faster incremental builds — only changed .cpp files recompile. Headers need include guards or <code>#pragma once</code>.</p>
+<p><strong>Q: What is a namespace?</strong> A named scope grouping declarations. Multiple namespaces fine; same function name in different namespaces fine — qualify (<code>ns::f()</code>) or use a using-declaration (<code>using ns::f;</code>) to disambiguate. Avoid <code>using namespace std;</code> in headers (pollutes every includer).</p>
+<p><strong>Q: Unnamed (anonymous) namespace?</strong></p>
+<pre><code>
+<span class="kw">namespace</span> { <span class="kw">void</span> helper(); }  <span class="com">// internal linkage</span>
+</code></pre>
+<p>Visible only within its translation unit — the modern replacement for file-<code>static</code> helpers, and why you use it: no name collisions with other .cpp files. Access a shadowed global with <code>::name</code>.</p>
+<p><strong>Q: NULL vs nullptr?</strong> <code>NULL</code> is an integral constant (typically <code>0</code>) — it can select <code>f(int)</code> over <code>f(char*)</code> in overload resolution. <code>nullptr</code> has its own type <code>std::nullptr_t</code> and converts only to pointer types. <strong>Always use <code>nullptr</code>.</strong> (No using-directive needed for either; <code>NULL</code> is a macro.)</p>
+<p><strong>Q: What does <code>static</code> mean? (depends where — classic rapid-fire question)</strong></p>
+<ul>
+<li><strong>Local variable:</strong> persists across calls, initialized once — and that initialization is <strong>thread-safe</strong> since C++11 (the Meyers singleton relies on it).</li>
+<li><strong>Class member:</strong> one per <em>class</em>, not per object; shared by all instances. Static member functions have no <code>this</code>.</li>
+<li><strong>Free function / global at namespace scope:</strong> internal linkage — invisible to other .cpp files (the pre-C++11 spelling of the unnamed namespace).</li>
+</ul>
+<p><strong>Q: What is the ODR, and what does <code>inline</code> really mean now?</strong> ODR = one definition rule: one definition of each entity per program (one per translation unit for inlinable things, and they must be identical). <code>inline</code> today means &quot;<strong>multiple identical definitions across translation units are allowed — linker, keep one</strong>&quot; — it is <em>not</em> a request to inline (optimizers decide that themselves). It&#x27;s why function bodies in headers need <code>inline</code> (or to be templates/member functions, which get it implicitly), and C++17 <code>inline</code> variables let you define globals in headers without link errors.</p>
+<p><strong>Q: What is the static initialization order fiasco?</strong> The initialization order of globals in <em>different</em> translation units is unspecified — a global whose constructor uses another TU&#x27;s global may run first and read garbage. Fix: function-local static (<code>Widget&amp; instance() { static Widget w; return w; }</code>) — constructed on first use, thread-safe. This is <em>why</em> the Meyers singleton looks the way it does.</p>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 10 ==================== -->
+<section id="s10">
+  <h2><span class="num">10</span>Exceptions — Modernized</h2>
+<p><strong>Q: Error handling vs exception handling?</strong> Error handling: check and branch on failure conditions (return codes, <code>std::optional</code>, <code>std::expected</code> in C++23). Exception handling: <code>throw</code> transfers control to a matching <code>catch</code>, unwinding the stack (destructors run — this is RAII&#x27;s payoff).</p>
+<p><strong>Q: Throw/catch mechanics?</strong></p>
+<pre><code>
+<span class="kw">try</span> {
+    <span class="kw">if</span> (bad) <span class="kw">throw</span> std::runtime_error(<span class="str">&quot;what happened&quot;</span>);
+} <span class="kw">catch</span> (<span class="kw">const</span> std::exception&amp; e) {   <span class="com">// catch by const ref!</span>
+    log(e.what());
+} <span class="kw">catch</span> (...) {                        <span class="com">// catch anything</span>
+}
+</code></pre>
+<ul>
+<li>Thrown value can be any type, but <strong>throw objects derived from <code>std::exception</code></strong>.</li>
+<li><strong>Catch by <code>const&amp;</code></strong> — catching by value slices derived exception types.</li>
+<li>Uncaught exception → <code>std::terminate</code>.</li>
+<li>A catch block isn&#x27;t a function; a throw isn&#x27;t a call — it unwinds until a matching handler.</li>
+<li>To carry multiple values, throw a class with the data as members.</li>
+</ul>
+<p><strong>Q: What replaced throw lists / exception specifications?</strong> <code>throw(e1, e2)</code> specs were deprecated in C++11 and <strong>removed in C++17</strong>. Your notes&#x27; rules about matching throw lists on overloads/overrides are obsolete. Modern C++:</p>
+<pre><code>
+<span class="kw">void</span> f() <span class="kw">noexcept</span>;   <span class="com">// promises not to throw; violating it -&gt; std::terminate</span>
+</code></pre>
+<p>Mark move constructors/assignment <code>noexcept</code> — containers like <code>vector</code> only <em>move</em> elements during reallocation if the move is <code>noexcept</code> (otherwise they copy for the strong guarantee).</p>
+<p><strong>Q: When to terminate vs recover?</strong> Unrecoverable/corrupt state: propagate or terminate. Recoverable (bad user input, transient failure): catch at the level that can retry or substitute data.</p>
+<p><strong>Q: What is RAII? (the most-asked C++ concept, full stop)</strong> RAII = resource acquisition is initialization: tie a resource&#x27;s lifetime to an object&#x27;s lifetime — acquire in the constructor, release in the destructor. Because destructors run on <em>every</em> scope exit (return, exception, break), cleanup becomes unskippable. <code>lock_guard</code>, <code>unique_ptr</code>, <code>fstream</code>, <code>vector</code> are all RAII. It&#x27;s also <em>why</em> C++ exceptions are usable at all: stack unwinding runs destructors, so RAII code is exception-safe by construction while <code>malloc</code>/<code>lock()</code> code leaks on the first throw.</p>
+<p><strong>Q: The three exception safety guarantees?</strong></p>
+<ul>
+<li><strong>Nothrow</strong> — the operation cannot fail (<code>noexcept</code>): destructors, moves, swaps should live here.</li>
+<li><strong>Strong</strong> — if it throws, state is unchanged (transactional). <code>vector::push_back</code> gives this — which is exactly why reallocation copies non-noexcept-movable types.</li>
+<li><strong>Basic</strong> — if it throws, no leaks and invariants hold, but state may have changed.</li>
+<p>Being able to classify a function you just wrote into one of these is a senior-level tell.</p>
+</ul>
+<p><strong>Q: <code>throw;</code> vs <code>throw e;</code> inside a catch block?</strong></p>
+<pre><code>
+<span class="kw">catch</span> (<span class="kw">const</span> std::exception&amp; e) {
+    log(e.what());
+    <span class="kw">throw</span>;      <span class="com">// rethrows the ORIGINAL object, dynamic type intact</span>
+    <span class="com">// throw e; // copies e AS ITS STATIC TYPE — slices a derived exception!</span>
+}
+</code></pre>
+<p>Bare <code>throw;</code> is the only correct rethrow. <code>throw e;</code> is the slicing problem wearing an exception costume.</p>
+<p><strong>Q: Can a destructor throw?</strong> Destructors are implicitly <code>noexcept</code>. If one throws during stack unwinding (an exception already in flight), the program calls <code>std::terminate</code> — two exceptions can&#x27;t propagate at once. Rule: destructors never throw; if cleanup can fail, offer an explicit <code>close()</code> that can, and have the destructor swallow or log.</p>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 11 ==================== -->
+<section id="s11">
+  <h2><span class="num">11</span>Lambdas</h2>
+<p><strong>Q: What is a lambda, mechanically?</strong> Compiler-generated class with captured variables as members and <code>operator()</code> as the body (a &quot;closure object&quot;). Knowing this makes every rule below derivable.</p>
+<pre><code>
+<span class="kw">int</span> base = 10;
+<span class="kw">auto</span> add  = [base](<span class="kw">int</span> x) { <span class="kw">return</span> base + x; };   <span class="com">// capture by value: member copy</span>
+<span class="kw">auto</span> add2 = [&amp;base](<span class="kw">int</span> x) { <span class="kw">return</span> base + x; };  <span class="com">// capture by reference: member ref</span>
+</code></pre>
+<p><strong>Q: The capture traps?</strong></p>
+<ul>
+<li>⚠️ <strong>Dangling by-reference capture</strong> — the #1 lambda bug: <code>[&amp;]</code> capturing locals, lambda outlives the scope (stored callback, thread, async). Rule: <strong>by value (or move) for anything that escapes the current scope; <code>[&amp;]</code> only for lambdas consumed immediately</strong> (e.g. passed to <code>std::sort</code>).</li>
+<li>⚠️ <strong><code>this</code> is captured as a pointer</strong> — both <code>[this]</code> and <code>[=]</code> capture the <em>pointer</em>, not the object; if the object dies before the callback runs, dangling. <code>[*this]</code> (C++17) copies the object; capturing a <code>shared_ptr</code>/<code>weak_ptr</code> to self is the async-code pattern.</li>
+<li><strong>By-value captures are <code>const</code> inside the lambda</strong> unless you add <code>mutable</code> (which makes <code>operator()</code> non-const — it mutates the <em>closure&#x27;s copy</em>, never the original).</li>
+<li><strong>Init capture (C++14)</strong> moves things in: <code>[buf = std::move(buffer)] { ... }</code> — the way to hand a resource to a callback without copying.</li>
+</ul>
+<p><strong>Q: Lambda vs std::function vs function pointer?</strong></p>
+<ul>
+<li>A <strong>captureless</strong> lambda converts to a plain function pointer (usable with C APIs).</li>
+<li>Passing a lambda to a <strong>template</strong> parameter (<code>std::sort</code>) keeps its exact type → the call inlines. Passing through <strong><code>std::function</code></strong> type-erases: possible heap allocation for large captures + an indirect call that blocks inlining. Rule for hot paths: template/<code>auto</code> parameters, not <code>std::function</code>. (This is also the qsort-vs-std::sort answer: sort&#x27;s inlined comparator beats qsort&#x27;s function pointer.)</li>
+</ul>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 12 ==================== -->
+<section id="s12">
+  <h2><span class="num">12</span>Rapid-Fire Classics</h2>
+<ul>
+<li><strong><code>enum class</code> vs <code>enum</code>:</strong> scoped (must qualify <code>Color::Red</code>), doesn&#x27;t implicitly convert to int, doesn&#x27;t leak names into the enclosing scope, and you can fix the underlying type. Always <code>enum class</code> in new code.</li>
+<li><strong><code>auto</code> pitfalls:</strong> <code>auto</code> deduction <strong>drops references and top-level const</strong> — <code>auto x = getRef();</code> copies. Want the reference? <code>auto&amp;</code>. Read-only loop over expensive elements: <code>for (const auto&amp; e : v)</code> — plain <code>for (auto e : v)</code> copies every element, a classic silent cost.</li>
+<li><strong><code>++i</code> vs <code>i++</code>:</strong> identical for ints after optimization; for iterators, <code>i++</code> must materialize a copy of the old value — habit: pre-increment in loops.</li>
+<li><strong><code>==</code> vs <code>.equals</code>-style traps from other languages:</strong> C++ <code>==</code> on pointers compares addresses; on containers/strings compares contents. Know which one you&#x27;re holding.</li>
+<li><strong><code>size_t</code> underflow:</strong> <code>for (size_t i = n - 1; i &gt;= 0; --i)</code> never terminates — unsigned can&#x27;t go negative. Loop down with <code>for (size_t i = n; i-- &gt; 0;)</code> or use a signed index.</li>
+<li><strong>Shadowing:</strong> an inner-scope declaration hides the outer one; <code>-Wshadow</code> exists because constructors with parameter names matching members are the classic case (<code>x = x;</code> assigns the parameter to itself — use the member init list).</li>
+</ul>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 13 ==================== -->
+<section id="s13">
+  <h2><span class="num">13</span>Data Structures &amp; Recursion (your notes were fine — condensed)</h2>
+<p><strong>Linked list:</strong> dynamic size, O(n) access, O(1) insert/remove <em>given the node</em>. Self-referential via a pointer member (legal because a pointer&#x27;s size is known before the type is complete). Doubly linked: nodes carry <code>prev</code> + <code>next</code>; keep head and tail. Binary tree node: data + left + right. Any node-based structure owning raw pointers needs the Rule of Three/Five — or hold children in <code>unique_ptr</code> and get Rule of Zero.</p>
+<p><strong>typedef in old list code → <code>using Node = struct node;</code> style aliases now.</strong></p>
+<p><strong>Recursion:</strong> must have (1) reachable base case(s) — guard with a condition and make progress toward it each call, (2) correct base case behavior, (3) correct recursive step. Each call pushes a stack frame → deep recursion risks stack overflow; iterative versions trade code brevity for less memory/overhead. (Interview note: know how to convert recursion to iteration with an explicit stack, and that tail calls aren&#x27;t guaranteed to be optimized in C++.)</p>
+<p><strong>Binary search:</strong> on a sorted range, compare the middle element, recurse/iterate into the half that can contain the target. O(log n). In C++: <code>std::lower_bound</code> / <code>std::upper_bound</code> / <code>std::binary_search</code>. Classic bug: <code>mid = lo + (hi - lo) / 2</code> to avoid overflow.</p>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 14 ==================== -->
+<section id="s14">
+  <h2><span class="num">14</span>Testing (modernized)</h2>
+<ul>
+<li><strong>Unit testing:</strong> test one module/unit in isolation.</li>
+<li>Write tests before/alongside code (TDD): write the test, write just enough code to pass.</li>
+<li><strong>Why file/automated IO over typing input:</strong> repeatability and automation — same inputs every run, runnable in CI. (Your notes said &quot;faster&quot; — that&#x27;s incidental, not the reason.)</li>
+<li><strong>Stub:</strong> placeholder implementation returning a canned value so dependents can be tested. Top-down: stub everything, replace one at a time. Bottom-up: build and test leaf functions first.</li>
+<li><code>assert(cond)</code> from <code>&lt;cassert&gt;</code>; disabled when <code>NDEBUG</code> is defined <strong>before the include</strong> — in practice via the compiler flag <code>-DNDEBUG</code> (standard in release builds).</li>
+<li>Modern answer: use a framework (GoogleTest, Catch2) rather than hand-rolled asserts.</li>
+</ul>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 15 ==================== -->
+<section id="s15">
+  <h2><span class="num">15</span>Modern C++ Checklist (say these, don&#x27;t get caught without them)</h2>
+<ul>
+<li><code>nullptr</code>, never <code>NULL</code>/<code>0</code></li>
+<li><code>using</code> aliases, not <code>typedef</code></li>
+<li><code>override</code> on every overriding virtual; <code>virtual ~Base() = default;</code> in polymorphic bases</li>
+<li><code>unique_ptr</code>/<code>make_unique</code> instead of raw <code>new</code>/<code>delete</code></li>
+<li>Rule of Zero &gt; Rule of Five &gt; Rule of Three</li>
+<li><code>std::move</code> for transfers; move ops marked <code>noexcept</code></li>
+<li><code>explicit</code> on single-argument constructors</li>
+<li>Brace initialization <code>{}</code>; beware <code>Foo f();</code> most vexing parse</li>
+<li>Range-based for: <code>for (const auto&amp; x : v)</code> — plain <code>auto</code> copies</li>
+<li><code>const&amp;</code> parameters for non-cheap read-only args; const/non-const member overload pairs</li>
+<li>Named casts only; C-casts are banned for a reason</li>
+<li>RAII everywhere; know the three exception guarantees (nothrow/strong/basic)</li>
+<li>Catch by <code>const&amp;</code>; rethrow with bare <code>throw;</code>; destructors never throw</li>
+<li>Lambdas: by-value/move captures for anything that escapes; templates over <code>std::function</code> in hot paths</li>
+<li><code>enum class</code>, <code>static</code> in its three meanings, Meyers singleton for init-order problems</li>
+<li>C++20 nice-to-haves: <code>&lt;=&gt;</code> defaulted comparisons, <code>std::span</code>, concepts (recognize, not necessarily write)</li>
+</ul>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+</div>
+<script src="nav.js" defer></script>
+</body>
+</html>

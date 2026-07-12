@@ -127,7 +127,7 @@ function toggleTheme() {
 <header class="masthead" id="top">
   <p class="eyebrow">C++ Interview Prep · Part 2</p>
   <h1>Iterators, Moves, Smart Pointers, Concurrency</h1>
-  <p class="subtitle">The four highest-yield topics after virtual functions. Taught from scratch, traps marked ⚠️, one-liners marked 💬.</p>
+  <p class="subtitle">The four highest-yield topics after virtual functions, including the second-order follow-ups. If it's asked often enough to sink an interview, it's in here. Traps marked ⚠️, one-liners marked 💬.</p>
   <div class="legend"><span>⚠️ interview trap</span><span>💬 one-liner worth saying verbatim</span></div>
 </header>
 
@@ -180,11 +180,12 @@ std::vector&lt;<span class="kw">int</span>&gt; v = {<span class="str">1</span>, 
 v.push_back(<span class="str">4</span>);        <span class="com">// may reallocate</span>
 first = <span class="str">99</span>;            <span class="com">// UB if it did — writes to freed memory</span>
 
-<span class="com">// Bug 2: self-referential push_back</span>
-v.push_back(v[<span class="str">0</span>]);     <span class="com">// UB if reallocation happens mid-call?</span>
-<span class="com">// Actually SAFE — the standard requires push_back to cope. But</span>
-<span class="com">// v.insert(v.begin(), v[0]) style patterns are where people get burned;</span>
-<span class="com">// know that the safe-ness is subtle and version it in an interview.</span>
+<span class="com">// Bug 2: inserting from yourself</span>
+v.push_back(v[<span class="str">0</span>]);     <span class="com">// SAFE — the standard requires push_back to handle an</span>
+<span class="com">// argument aliasing the vector's own storage (copied before the old block dies).</span>
+v.insert(v.end(), v.begin(), v.end());   <span class="com">// UB — RANGE insert from the same</span>
+<span class="com">// container: the source iterators invalidate mid-operation. Single-element</span>
+<span class="com">// self-insert is handled; self-range is not. Worth voicing in an interview.</span>
 
 <span class="com">// Bug 3: erasing inside a range-for</span>
 <span class="kw">for</span> (<span class="kw">int</span> x : v)
@@ -206,6 +207,14 @@ std::erase_if(v, bad);
 <span class="com">// map / set / unordered_*: same reseat pattern works (C++11 erase returns next)</span>
 <span class="kw">for</span> (<span class="kw">auto</span> it = m.begin(); it != m.end(); )
     it = bad(*it) ? m.erase(it) : std::next(it);</code></pre>
+
+  <h3>Second-order points (the follow-up questions)</h3>
+  <ul>
+    <li><strong>Why is erase-remove two steps?</strong> <code>std::remove_if</code> can't erase — it only sees iterators, not the container. It <em>compacts survivors to the front</em> and returns the new logical end; the tail is moved-from junk still counted in <code>size()</code>. The outer <code>erase(newEnd, end())</code> does the actual truncation. "What's in the tail after remove_if?" is a standard follow-up: valid-but-unspecified leftovers.</li>
+    <li><strong>Indices survive reallocation; pointers don't.</strong> <code>v[7]</code> means the same element after any growth. When you must remember a position across mutations, storing an index instead of an iterator/pointer is the standard fix — cheap, and worth saying unprompted.</li>
+    <li><strong>Iterator categories:</strong> random-access (<code>vector</code>/<code>deque</code>/arrays: <code>it + n</code>, <code>it2 - it1</code>) → bidirectional (<code>map</code>/<code>set</code>/<code>list</code>: only <code>++</code>/<code>--</code>) → forward (<code>unordered_*</code>, <code>forward_list</code>). This is why <code>std::sort</code> won't compile on a <code>list</code> (needs random access; <code>list::sort</code> exists instead) and why <code>std::next(it, n)</code>/<code>std::advance</code> are O(n) on node containers.</li>
+    <li><strong>Views obey the same rules:</strong> <code>.data()</code>, <code>c_str()</code>, <code>span</code>s and <code>string_view</code>s into a container are invalidated exactly like pointers into it. A <code>string_view</code> of a string that then grows — or of a temporary that died — is the modern dangling-pointer bug.</li>
+  </ul>
 
   <div class="trap"><span class="tag">⚠️ Trap — capacity vs size</span>
   <p><code>reserve(n)</code> pre-allocates capacity so subsequent push_backs won't reallocate (pointers stay valid up to n elements) — it does <strong>not</strong> change <code>size()</code>. <code>resize(n)</code> changes size. If you know the element count up front, <code>reserve</code> is both a performance win and an invalidation guarantee — say that in interviews. Growth is geometric (factor ~1.5–2×), which is what makes push_back <em>amortized</em> O(1).</p></div>
@@ -274,7 +283,24 @@ take(std::move(name));  <span class="com">// xvalue  → &amp;&amp; overload</sp
     <li><strong>RVO</strong> (return value optimization): returning a prvalue (<code>return std::string("x");</code>) constructs directly in the caller's storage — <strong>guaranteed</strong> since C++17, not even a move happens.</li>
     <li><strong>NRVO</strong> (named RVO): returning a local variable by name — permitted and near-universal, but not guaranteed. If it can't apply, the return is treated as a move automatically.</li>
     <li>⚠️ Therefore <code>return std::move(local);</code> is an anti-pattern: it can't help (the return already moves at worst) and it <em>breaks NRVO</em>. Compilers warn about it now. Saying this unprompted is a strong signal.</li>
+    <li>⚠️ <strong>The exception — where an explicit move in a return IS correct:</strong> returning a <em>member</em> or a <em>parameter</em> (<code>return std::move(pair_.first);</code>, <code>return std::move(param);</code>). Those never qualify for NRVO (it applies only to plain local variables), so without the move you'd get a copy. Don't let the anti-pattern rule make you call correct code a bug.</li>
   </ul>
+
+  <h3>Sink parameters (the API-design question)</h3>
+<pre><code><span class="kw">class</span> <span class="typ">Person</span> {
+    std::string name_;
+<span class="kw">public</span>:
+    Person(std::string name) : name_(std::move(name)) {}  <span class="com">// by value + move</span>
+};
+<span class="com">// rvalue arg: move + move (≈free).  lvalue arg: copy + move (minimum possible).</span></code></pre>
+  <p>For parameters the function will <strong>keep</strong>, take by value and move into place: one signature, optimal for both call styles. The <code>const&amp;</code>/<code>&amp;&amp;</code> overload pair saves one cheap move at the cost of 2ⁿ overloads. "By value and move for sinks" is the expected answer to "how should this constructor take its arguments?"</p>
+
+  <h3>Generation rules (what silently disappears)</h3>
+  <ul>
+    <li>Declaring a <strong>destructor or any copy op</strong> (even <code>= default</code>) → implicit <strong>moves not generated</strong>; "moves" silently become copies. Declaring any <strong>move op</strong> → <strong>copies deleted</strong>. Declare one of the five, deal with all five (Rule of Five), or declare none (Rule of Zero).</li>
+    <li>Verify instead of hoping: <code>static_assert(std::is_nothrow_move_constructible_v&lt;Widget&gt;);</code></li>
+  </ul>
+  <p><em>Full treatment — value categories, reference collapsing, the Noisy trap gallery — lives in the dedicated move-semantics deep dive.</em></p>
 
   <h3>Perfect forwarding (recognize, use correctly)</h3>
 <pre><code><span class="kw">template</span> &lt;<span class="kw">typename</span> T&gt;
@@ -338,7 +364,16 @@ take(std::move(name));  <span class="com">// xvalue  → &amp;&amp; overload</sp
     <li><code>lock()</code> not <code>expired()</code>+deref — <code>expired()</code> then use is a race in threaded code.</li>
   </ul>
 
-  <div class="oneliner"><span class="tag">💬 One-liners</span>"unique_ptr is a raw pointer with a destructor — same size, same speed, plus a compiler-enforced ownership story."<br><br>"shared_ptr is two pointers; the price is a heap control block and atomic count traffic — copies cost, moves are free."<br><br>"Cycles: ownership edges shared, back-edges weak."</div>
+  <h3>Second-order points (the follow-up questions)</h3>
+  <ul>
+    <li><strong>Passing conventions — signatures are ownership statements:</strong> take <code>unique_ptr&lt;T&gt;</code> <em>by value</em> to take ownership (caller must std::move); take <code>shared_ptr&lt;T&gt;</code> by value to participate in ownership; take <code>T&amp;</code> or <code>T*</code> to merely <em>use</em> the object. A function that only reads a widget should not mention smart pointers at all — asking for <code>const shared_ptr&amp;</code> to "be safe" is a design smell interviewers probe.</li>
+    <li><strong>Deleter placement contrast:</strong> <code>shared_ptr</code>'s deleter lives in the <em>control block</em>, type-erased — so <code>sizeof(shared_ptr)</code> is always two pointers, custom deleter or not, and the deleter is chosen at <em>creation</em>. Consequence worth knowing: <code>shared_ptr&lt;Base&gt; p = make_shared&lt;Derived&gt;();</code> destroys the <code>Derived</code> correctly <em>even without a virtual destructor</em>, because the control block captured Derived's deleter. (Still write virtual destructors — don't lean on this.) <code>unique_ptr</code> stores its deleter inline, which is why a stateful deleter grows it.</li>
+    <li><strong><code>unique_ptr&lt;T[]&gt;</code></strong> exists and calls <code>delete[]</code>; <code>unique_ptr&lt;T&gt;</code> holding a <code>new[]</code> array is UB. In practice: prefer <code>vector</code>/<code>array</code> unless an API hands you a raw array.</li>
+    <li><strong><code>shared_from_this()</code> timing:</strong> only valid once some <code>shared_ptr</code> already owns the object — calling it in the <em>constructor</em> throws <code>std::bad_weak_ptr</code> (no control block exists yet). The standard workaround is a static factory that creates the shared_ptr first.</li>
+    <li><strong>Aliasing constructor:</strong> <code>shared_ptr&lt;Part&gt;(owner, &amp;owner-&gt;part)</code> — points at a <em>member</em> while sharing the <em>owner's</em> control block and lifetime. How you hand out a piece of an object without splitting ownership.</li>
+  </ul>
+
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"unique_ptr is a raw pointer with a destructor — same size, same speed, plus a compiler-enforced ownership story."<br><br>"shared_ptr is two pointers; the price is a heap control block and atomic count traffic — copies cost, moves are free."<br><br>"Cycles: ownership edges shared, back-edges weak."<br><br>"A smart pointer in a signature is a claim about ownership — functions that just use the object take a reference."</div>
   <p class="backtop"><a href="#top">↑ back to top</a></p>
 </section>
 
@@ -409,7 +444,17 @@ std::jthread jt(work);           <span class="com">// C++20: joins automatically
     <li><strong>Magic statics:</strong> initialization of a function-local <code>static</code> is thread-safe since C++11 — the Meyers singleton (<code>static Widget w; return w;</code>) needs no locking. <code>std::call_once</code>/<code>once_flag</code> for the general case.</li>
   </ul>
 
-  <div class="oneliner"><span class="tag">💬 One-liners</span>"A data race is UB, not a wrong answer — the fix is synchronization, not retries."<br><br>"Locks are RAII or they're bugs."<br><br>"condition_variable waits are loops: spurious wakeups and stolen wakeups both re-test the predicate."<br><br>"Atomics protect a variable; mutexes protect an invariant."</div>
+  <h3>Second-order points (the follow-up questions)</h3>
+  <ul>
+    <li><strong>Read-heavy data → <code>std::shared_mutex</code>:</strong> many concurrent readers (<code>shared_lock</code>) or one exclusive writer (<code>unique_lock</code>). Know the caveat: for very short critical sections the bookkeeping can cost more than a plain mutex — "reader/writer lock" is an answer you propose <em>with</em> a measurement plan.</li>
+    <li>⚠️ <strong>The <code>std::async</code> trap:</strong> the future returned by <code>std::async</code> <strong>blocks in its destructor</strong> (waits for the task). So <code>std::async(std::launch::async, work);</code> — discarding the future — runs effectively <em>synchronously</em>: the temporary future's destructor waits right there. Also: the default launch policy is <code>async | deferred</code>, and <em>deferred</em> means "run lazily on <code>.get()</code>, possibly never." Request <code>std::launch::async</code> explicitly and keep the future.</li>
+    <li><strong>CAS — compare-and-swap, the lock-free primitive:</strong> <code>a.compare_exchange_weak(expected, desired)</code> atomically does "if a == expected, write desired; else load a into expected," returning success. Lock-free algorithms are CAS retry loops: read, compute, attempt swap, retry on failure. <code>weak</code> may fail spuriously (fine inside a loop, slightly faster); <code>strong</code> doesn't. If asked to "implement X lock-free," the shape of the answer is a CAS loop — and a caveat that you'd benchmark it against a mutex.</li>
+    <li><strong>acquire/release, one level deeper:</strong> a <em>release</em> store publishes every write made before it; an <em>acquire</em> load that reads that value is guaranteed to see them. That pairing is the "producer fills data, sets ready-flag; consumer sees flag, reads data" handoff. <code>seq_cst</code> (the default) = acquire/release <em>plus</em> one global order all threads agree on. That's the depth to have; deriving fence placements live is not expected.</li>
+    <li><strong><code>thread_local</code>:</strong> one instance per thread — the tool for per-thread caches, counters, and scratch buffers that make sharing (and its costs) disappear, combined at the end. Often the right answer to "how do we reduce contention on this counter."</li>
+    <li><strong>Performance side:</strong> false sharing (two threads writing different variables on one 64-byte cache line → coherence ping-pong; fix with <code>alignas(64)</code>) and contention economics live in the performance guide — flag them here because "make this concurrent code fast" questions blend both docs.</li>
+  </ul>
+
+  <div class="oneliner"><span class="tag">💬 One-liners</span>"A data race is UB, not a wrong answer — the fix is synchronization, not retries."<br><br>"Locks are RAII or they're bugs."<br><br>"condition_variable waits are loops: spurious wakeups and stolen wakeups both re-test the predicate."<br><br>"Atomics protect a variable; mutexes protect an invariant."<br><br>"Lock-free means a CAS loop — and a benchmark against the mutex it replaced."</div>
   <p class="backtop"><a href="#top">↑ back to top</a></p>
 </section>
 
@@ -421,9 +466,11 @@ std::jthread jt(work);           <span class="com">// C++20: joins automatically
   <ul class="checklist">
     <li>vector reallocation kills everything; reserve() prevents it and you should say so</li>
     <li>erase returns the next iterator — reseat with <code>it = c.erase(it)</code></li>
-    <li>bulk removal from vector: erase-remove idiom or <code>std::erase_if</code> (C++20)</li>
+    <li>bulk removal from vector: erase-remove idiom or <code>std::erase_if</code> (C++20); remove_if compacts, erase truncates — that's why two steps</li>
     <li>deque push at ends / unordered rehash: iterators die, references survive — know why</li>
     <li>never erase inside a range-for</li>
+    <li>indices survive reallocation; pointers/iterators/string_views don't</li>
+    <li>iterator categories: random-access → bidirectional → forward; sort needs random access</li>
   </ul>
 
   <h3>Move semantics</h3>
@@ -431,8 +478,9 @@ std::jthread jt(work);           <span class="com">// C++20: joins automatically
     <li>std::move = cast; const kills moves silently (falls back to copy)</li>
     <li>move ctor: parameter is an lvalue — std::move/std::exchange each member; null the source</li>
     <li>moves marked noexcept, or vector copies on reallocation</li>
-    <li>declaring a destructor suppresses implicit moves (Rule of Five/Zero)</li>
-    <li>never <code>return std::move(local)</code> — defeats NRVO</li>
+    <li>dtor/copy declaration kills implicit moves; move declaration deletes copies — Rule of Five/Zero</li>
+    <li>never <code>return std::move(local)</code> — but DO move returned members and parameters (NRVO never applies to those)</li>
+    <li>sinks: pass by value + std::move into place</li>
     <li>deduced <code>T&amp;&amp;</code> = forwarding reference → <code>std::forward&lt;T&gt;</code>; concrete <code>X&amp;&amp;</code> = rvalue ref → <code>std::move</code></li>
   </ul>
 
@@ -440,19 +488,23 @@ std::jthread jt(work);           <span class="com">// C++20: joins automatically
   <ul class="checklist">
     <li>unique_ptr = 8 bytes, zero overhead, move-only; function-pointer deleter doubles it</li>
     <li>shared_ptr = 2 pointers + control block {strong, weak, deleter}; copies do atomic ops, moves don't</li>
+    <li>shared_ptr's deleter lives in the control block — size always 16, correct Derived destruction captured at creation</li>
     <li>make_shared: one allocation; caveat — weak_ptrs pin the whole block</li>
-    <li>never two shared_ptrs from one raw pointer; never shared_ptr(this) — enable_shared_from_this</li>
+    <li>never two shared_ptrs from one raw pointer; never shared_ptr(this) — enable_shared_from_this (but not in the constructor)</li>
     <li>cycles: back-edges are weak_ptr; access via lock(), not expired()</li>
+    <li>signatures: unique_ptr by value = takes ownership; shared_ptr by value = shares it; T&amp;/T* = just uses it</li>
   </ul>
 
   <h3>Concurrency</h3>
   <ul class="checklist">
     <li>data race = concurrent access + a write + no sync = UB</li>
-    <li>lock_guard default, unique_lock for cv/flexibility, scoped_lock for multiple mutexes</li>
+    <li>lock_guard default, unique_lock for condition_variable waits and flexibility, scoped_lock for multiple mutexes, shared_mutex for read-heavy</li>
     <li>cv.wait always with a predicate (spurious + stolen wakeups)</li>
     <li>producer/consumer queue: be able to write it cold</li>
-    <li>atomics for one variable, mutex for an invariant across variables</li>
-    <li>join or detach every thread; jthread auto-joins; std::ref to pass references</li>
+    <li>atomics for one variable, mutex for an invariant across variables; compare_exchange = the CAS loop primitive</li>
+    <li>release publishes, acquire observes; seq_cst = that plus one global order (the default)</li>
+    <li>std::async: future's destructor blocks — request launch::async and keep the future</li>
+    <li>join or detach every thread; jthread auto-joins; std::ref to pass references; thread_local for per-thread state</li>
     <li>function-local static init is thread-safe (Meyers singleton)</li>
   </ul>
   <p class="backtop"><a href="#top">↑ back to top</a></p>

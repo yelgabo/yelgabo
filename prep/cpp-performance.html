@@ -122,14 +122,15 @@ function toggleTheme() {
     <li><a href="#s1">The Mental Model: Latency Numbers</a></li>
     <li><a href="#s2">Cache Mechanics</a></li>
     <li><a href="#s3">Data Layout</a></li>
-    <li><a href="#s4">Branches &amp; Speculation</a></li>
-    <li><a href="#s5">ILP &amp; Vectorization</a></li>
-    <li><a href="#s6">Allocation Costs</a></li>
-    <li><a href="#s7">What the Compiler Does For You</a></li>
-    <li><a href="#s8">Concurrency Performance</a></li>
-    <li><a href="#s9">Measurement — the Real Skill</a></li>
-    <li><a href="#s10">Classic "Why Is This Slow?" Questions</a></li>
-    <li><a href="#s11">Cheat Sheet</a></li>
+    <li><a href="#s4">Object Size: sizeof, Alignment, Padding</a></li>
+    <li><a href="#s5">Branches &amp; Speculation</a></li>
+    <li><a href="#s6">ILP &amp; Vectorization</a></li>
+    <li><a href="#s7">Allocation Costs</a></li>
+    <li><a href="#s8">What the Compiler Does For You</a></li>
+    <li><a href="#s9">Concurrency Performance</a></li>
+    <li><a href="#s10">Measurement — the Real Skill</a></li>
+    <li><a href="#s11">Classic "Why Is This Slow?" Questions</a></li>
+    <li><a href="#s12">Cheat Sheet</a></li>
   </ol>
 </nav>
 
@@ -209,7 +210,70 @@ std::vector&lt;std::unique_ptr&lt;<span class="typ">Particle</span>&gt;&gt; pps;
 
 <!-- ==================== 4 ==================== -->
 <section id="s4">
-  <h2><span class="num">04</span>Branches &amp; Speculation</h2>
+  <h2><span class="num">04</span>Object Size: sizeof, Alignment, Padding</h2>
+  <p>Object size is the numerator of every cache argument: 64-byte lines &divide; <code>sizeof(T)</code> = objects per line, so shrinking a struct from 24 to 16 bytes is a 33% cut in memory traffic for every loop that touches it &mdash; without changing a single loop. Being able to compute <code>sizeof</code> by hand is table stakes for an optimization role.</p>
+
+  <h3>The layout algorithm (compute it by hand)</h3>
+  <ul>
+    <li>Members are laid out <strong>in declaration order</strong> &mdash; the compiler is <em>not allowed to reorder</em> them. Reordering for size is your job, which is why the guideline exists at all.</li>
+    <li>Each member goes at the next offset that is a multiple of <strong>its own</strong> <code>alignof</code> (fundamentals: alignment = size; a struct's alignment = its strictest member's). Gaps inserted to get there are padding.</li>
+    <li>Total size rounds up to a multiple of the struct's alignment (<em>tail padding</em>) &mdash; so that in a <code>T arr[N]</code>, element 1 is also aligned. That's the whole reason tail padding exists.</li>
+    <li>Polymorphic class (any virtual function): <strong>+8 bytes for the vptr</strong>, at offset 0, once for a single-inheritance chain; one per base with virtuals under multiple inheritance.</li>
+  </ul>
+<pre><code><span class="kw">struct</span> <span class="typ">Order</span> {          <span class="com">// alignment 8 (double)</span>
+    <span class="kw">bool</span>   urgent;      <span class="com">// offset 0</span>
+                        <span class="com">// 7 bytes padding (price needs offset % 8 == 0)</span>
+    <span class="kw">double</span> price;       <span class="com">// offset 8</span>
+    <span class="kw">int</span>    qty;         <span class="com">// offset 16</span>
+    <span class="kw">bool</span>   flagged;     <span class="com">// offset 20</span>
+};                      <span class="com">// 21 -&gt; tail-pad to 24.  sizeof = 24</span>
+
+<span class="kw">struct</span> <span class="typ">Order2</span> {         <span class="com">// same members, descending alignment</span>
+    <span class="kw">double</span> price;       <span class="com">// 0</span>
+    <span class="kw">int</span>    qty;         <span class="com">// 8</span>
+    <span class="kw">bool</span>   urgent;      <span class="com">// 12</span>
+    <span class="kw">bool</span>   flagged;     <span class="com">// 13</span>
+};                      <span class="com">// pad to 16.  sizeof = 16 &mdash; 33% smaller, free</span></code></pre>
+
+  <h3>The odd cases (favorite follow-ups)</h3>
+  <ul>
+    <li><strong>Empty class = 1 byte</strong>, never 0 &mdash; two distinct objects must have distinct addresses, so an <code>Empty arr[10]</code> needs 10 addresses.</li>
+    <li><strong>EBO &mdash; empty base optimization:</strong> an empty <em>base</em> may occupy 0 bytes: <code>struct D : Empty { int x; };</code> is 4 bytes, while <code>struct C { Empty e; int x; };</code> is 8 (the member must get its own address; 1 byte + 3 padding). This is exactly how <code>unique_ptr</code> stores its stateless default deleter for free and why it's pointer-sized. C++20's <code>[[no_unique_address]]</code> gets the same effect for <em>members</em> (caveat: MSVC ignores the standard spelling for ABI reasons).</li>
+    <li><strong>References and pointers as members:</strong> 8 bytes each on 64-bit &mdash; a reference member is a pointer in layout terms.</li>
+    <li><strong>Bitfields</strong> (<code>uint32_t flags : 3;</code>) pack multiple fields into one integer: big size wins for flag-heavy structs, paid for with read-modify-write access, no address-of, and ABI-varying layout. Fine within one codebase; avoid on wire formats you don't control both ends of.</li>
+    <li><strong>alignof vs sizeof:</strong> <code>alignof</code> is the placement constraint, <code>sizeof</code> the footprint. <code>alignas(64)</code> over-aligns (per-thread data on its own cache line &mdash; the false-sharing fix, &sect;9); since C++17, <code>new</code> honors over-alignment.</li>
+  </ul>
+
+  <div class="trap"><span class="tag">&#9888;&#65039; Trap &mdash; #pragma pack is not a size optimization</span>
+  <p>Packing removes padding by allowing <em>misaligned members</em>. Costs: slower (sometimes split) loads on x86, faults on some ARM configurations, broken atomics, and taking a pointer/reference to a misaligned member is a portability landmine. Legitimate use: matching an on-disk or on-wire format &mdash; and even then, prefer <code>memcpy</code> into a properly aligned struct at the boundary. If asked "how do I shrink this struct," the answer is <strong>reorder, split hot/cold, bitfield</strong> &mdash; not pack.</p></div>
+
+  <h3>Typical sizes worth knowing cold (x86-64, Itanium ABI)</h3>
+  <table>
+    <tr><th>Type</th><th>Typical size</th><th>Why</th></tr>
+    <tr><td><code>T*</code>, reference, <code>unique_ptr&lt;T&gt;</code></td><td>8</td><td>one pointer; stateless deleter via EBO</td></tr>
+    <tr><td><code>shared_ptr</code> / <code>weak_ptr</code></td><td>16</td><td>object pointer + control-block pointer</td></tr>
+    <tr><td><code>std::vector</code></td><td>24</td><td>begin / end / capacity pointers</td></tr>
+    <tr><td><code>std::string</code></td><td>32 (libstdc++) / 24 (libc++)</td><td>SSO buffer folded into the object</td></tr>
+    <tr><td><code>std::optional&lt;double&gt;</code></td><td>16</td><td>payload + bool, padded to payload's alignment</td></tr>
+    <tr><td><code>std::variant&lt;int, double&gt;</code></td><td>16</td><td>largest alternative + discriminant + padding</td></tr>
+    <tr><td><code>std::mutex</code></td><td>40 (Linux/glibc)</td><td>wraps pthread_mutex_t &mdash; why per-object mutexes bloat</td></tr>
+    <tr><td><code>std::function</code></td><td>32&ndash;64 (varies)</td><td>type erasure + small-callable buffer</td></tr>
+  </table>
+  <p>Exact numbers vary by standard library and platform &mdash; quote them as "typical on 64-bit with the Itanium ABI (application binary interface)" and you're both useful and safe.</p>
+
+  <h3>Tooling</h3>
+  <ul>
+    <li><code>static_assert(sizeof(Order) == 16);</code> in the codebase &mdash; layout regressions become compile errors. Same for <code>alignof</code> and <code>offsetof</code> when a layout is load-bearing.</li>
+    <li><code>-Wpadded</code> (noisy but reveals every hole), <strong>pahole</strong> (Linux, from dwarves: prints each struct with its holes and cache-line boundaries &mdash; the professional's tool), and Compiler Explorer for quick checks.</li>
+  </ul>
+
+  <div class="oneliner"><span class="tag">&#128172; One-liners</span>"sizeof is an audit: members in declaration order, padding to each one's alignment, tail-pad for arrays, plus a vptr if polymorphic &mdash; nothing else."<br><br>"The compiler can't reorder members, so ordering by descending alignment is a human's job &mdash; and it's free bandwidth."</div>
+  <p class="backtop"><a href="#top">&#8593; back to top</a></p>
+</section>
+
+<!-- ==================== 5 ==================== -->
+<section id="s5">
+  <h2><span class="num">05</span>Branches &amp; Speculation</h2>
   <ul>
     <li>Pipelines are deep (~15–20 stages); the CPU can't wait to know a branch's direction, so it <strong>predicts</strong> and executes speculatively. Right: free. Wrong: pipeline flush, ~15–20 cycles.</li>
     <li>Predictors learn patterns. Loop back-edges: ~always right. Stable conditions: right. <strong>Data-dependent 50/50 branches are the pathological case</strong> — half your iterations eat a flush.</li>
@@ -232,9 +296,9 @@ mask = -(x &gt;= <span class="str">128</span>); sum += x &amp; mask;  <span clas
   <p class="backtop"><a href="#top">↑ back to top</a></p>
 </section>
 
-<!-- ==================== 5 ==================== -->
-<section id="s5">
-  <h2><span class="num">05</span>ILP &amp; Vectorization</h2>
+<!-- ==================== 6 ==================== -->
+<section id="s6">
+  <h2><span class="num">06</span>ILP &amp; Vectorization</h2>
   <h3>ILP — instruction-level parallelism</h3>
 <pre><code><span class="com">// One accumulator: every add waits on the previous one (dependency chain)</span>
 <span class="kw">for</span> (i) sum += a[i];
@@ -254,9 +318,9 @@ sum = s0 + s1 + s2 + s3;   <span class="com">// often 2–4x, no threads involve
   <p class="backtop"><a href="#top">↑ back to top</a></p>
 </section>
 
-<!-- ==================== 6 ==================== -->
-<section id="s6">
-  <h2><span class="num">06</span>Allocation Costs</h2>
+<!-- ==================== 7 ==================== -->
+<section id="s7">
+  <h2><span class="num">07</span>Allocation Costs</h2>
   <ul>
     <li>A heap allocation is ~25–100+ ns (lock-free fast paths help, but there's bookkeeping, possible lock contention, possible page faults) — <strong>and</strong> it scatters your data (§2's real cost). Deallocation similar. "Allocation in the hot loop" is the first thing to grep for in any slow-program question.</li>
     <li><strong><code>reserve()</code></strong>: a vector growing to 1M elements without reserve does ~20 geometric reallocations, each copying/moving everything. One <code>reserve(1'000'000)</code> removes all of it. Cheapest optimization in the language.</li>
@@ -268,9 +332,9 @@ sum = s0 + s1 + s2 + s3;   <span class="com">// often 2–4x, no threads involve
   <p class="backtop"><a href="#top">↑ back to top</a></p>
 </section>
 
-<!-- ==================== 7 ==================== -->
-<section id="s7">
-  <h2><span class="num">07</span>What the Compiler Does For You</h2>
+<!-- ==================== 8 ==================== -->
+<section id="s8">
+  <h2><span class="num">08</span>What the Compiler Does For You</h2>
   <ul>
     <li><strong>Optimization levels:</strong> <code>-O0</code> debug (nothing optimized — never benchmark this ⚠️), <code>-O1</code>, <code>-O2</code> the production default (inlining, vectorization, unrolling...), <code>-O3</code> more aggressive vectorization/unrolling, <code>-Os</code> optimize for size. <code>-march=native</code> unlocks the current CPU's instruction sets (AVX2 etc.) — without it, binaries target a lowest common denominator.</li>
     <li><strong>Inlining</strong> is the gateway optimization: it eliminates call overhead, but the real value is that the merged body enables constant propagation, dead-code elimination, and vectorization <em>across</em> the call boundary. This is why tiny functions in headers, lambdas passed to <code>std::sort</code> (vs a function pointer to <code>qsort</code>), and templates optimize so well — the compiler sees through them.</li>
@@ -283,9 +347,9 @@ sum = s0 + s1 + s2 + s3;   <span class="com">// often 2–4x, no threads involve
   <p class="backtop"><a href="#top">↑ back to top</a></p>
 </section>
 
-<!-- ==================== 8 ==================== -->
-<section id="s8">
-  <h2><span class="num">08</span>Concurrency Performance</h2>
+<!-- ==================== 9 ==================== -->
+<section id="s9">
+  <h2><span class="num">09</span>Concurrency Performance</h2>
   <ul>
     <li><strong>False sharing</strong> — the marquee question. Two threads write two <em>different</em> variables that happen to sit in the same 64-byte cache line. Cache coherence (the MESI protocol family — modified/exclusive/shared/invalid states) allows one core exclusive write access to a line at a time, so the line ping-pongs between cores. No data race, no bug — just 10–100× slowdown. Fix: pad or <code>alignas(64)</code> per-thread data:</li>
   </ul>
@@ -303,9 +367,9 @@ sum = s0 + s1 + s2 + s3;   <span class="com">// often 2–4x, no threads involve
   <p class="backtop"><a href="#top">↑ back to top</a></p>
 </section>
 
-<!-- ==================== 9 ==================== -->
-<section id="s9">
-  <h2><span class="num">09</span>Measurement — the Real Skill</h2>
+<!-- ==================== 10 ==================== -->
+<section id="s10">
+  <h2><span class="num">10</span>Measurement — the Real Skill</h2>
   <p>Everything above is hypothesis-generation. <strong>Measurement is the actual job</strong>, and interviewers for optimization roles probe it harder than any mechanism. The discipline:</p>
   <ol>
     <li><strong>Profile before touching anything.</strong> Intuition about where time goes is notoriously wrong. Tools: <code>perf</code> (Linux — <code>perf record</code>/<code>perf report</code>, <code>perf stat</code> for counters like cache-misses, branch-misses, IPC), Intel VTune, Instruments (macOS), flame graphs for visualization.</li>
@@ -330,9 +394,9 @@ sum = s0 + s1 + s2 + s3;   <span class="com">// often 2–4x, no threads involve
   <p class="backtop"><a href="#top">↑ back to top</a></p>
 </section>
 
-<!-- ==================== 10 ==================== -->
-<section id="s10">
-  <h2><span class="num">10</span>Classic "Why Is This Slow?" Questions</h2>
+<!-- ==================== 11 ==================== -->
+<section id="s11">
+  <h2><span class="num">11</span>Classic "Why Is This Slow?" Questions</h2>
   <table>
     <tr><th>Symptom / question</th><th>Answer sketch</th></tr>
     <tr><td>Column-wise 2D loop slow</td><td>Row-major layout → stride = row length → miss per access. Swap loop order; tile if both orders are needed.</td></tr>
@@ -348,9 +412,9 @@ sum = s0 + s1 + s2 + s3;   <span class="com">// often 2–4x, no threads involve
   <p class="backtop"><a href="#top">↑ back to top</a></p>
 </section>
 
-<!-- ==================== 11 ==================== -->
-<section id="s11">
-  <h2><span class="num">11</span>Cheat Sheet</h2>
+<!-- ==================== 12 ==================== -->
+<section id="s12">
+  <h2><span class="num">12</span>Cheat Sheet</h2>
   <ul class="checklist">
     <li>Latency ladder: L1 ~1 ns → RAM ~100 ns → SSD ~µs; ratios drive everything</li>
     <li>64-byte cache lines; count useful bytes per line fetched</li>

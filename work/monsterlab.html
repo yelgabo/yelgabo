@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Monster Lab — Case Study · Yelnil Gabo</title>
+  <meta name="description" content="Monster Lab — a Roblox game about creating monsters, discovering interactions, and building a laboratory whose layout changes what can be created." />
+  <meta name="theme-color" content="#fafaf9" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://yelgabo.com/work/monsterlab.html" />
+  <meta property="og:title" content="Monster Lab — Case Study · Yelnil Gabo" />
+  <meta property="og:description" content="A Roblox monster-creation game: 48 discoveries, 12 bases, 4 tiers, a Central Campus hub and a Personal Lab whose layout gates what you can create." />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0a'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' font-family='-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif' font-weight='800' font-size='30' fill='%23fafaf9' letter-spacing='-1'%3Eyg%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="../styles.css?v=2" />
+</head>
+<body class="proj-monsterlab" style="--proj:#9333ea">
+  <header class="subnav">
+    <div class="subnav__inner">
+      <a class="subnav__back" href="../index.html#projects"><span class="arrow" aria-hidden="true">&larr;</span> All projects</a>
+      <span class="subnav__proj"><span class="subnav__dot" aria-hidden="true"></span> Monster Lab</span>
+    </div>
+  </header>
+
+  <main class="case">
+    <section class="case-hero">
+      <span class="case-hero__folio">03</span>
+      <p class="case-hero__kicker">Game &middot; Roblox &middot; Luau</p>
+      <h1 class="case-hero__title">Monster Lab</h1>
+      <p class="case-hero__tagline">Create monsters, discover interactions, and build a lab whose layout changes what you can make.</p>
+      <div class="cta-row">
+        <a class="link-cta" href="https://github.com/yelgabo/monsterlab" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+      </div>
+    </section>
+
+    <div class="meta-strip">
+      <div class="meta-strip__field"><span class="meta-strip__k">Role</span><span class="meta-strip__v">Solo &mdash; design &amp; build</span></div>
+      <div class="meta-strip__field"><span class="meta-strip__k">Year</span><span class="meta-strip__v">2026</span></div>
+      <div class="meta-strip__field"><span class="meta-strip__k">Stack</span><span class="meta-strip__v">Luau &middot; Rojo &middot; Roblox Studio</span></div>
+      <div class="meta-strip__field"><span class="meta-strip__k">Status</span><span class="meta-strip__v is-accent">In development</span></div>
+    </div>
+
+    <figure class="figure">
+      <div class="browser-frame browser-frame--wide">
+        <div class="browser-frame__bar">
+          <span class="browser-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="browser-frame__url">Roblox Studio &mdash; Central Campus</span>
+        </div>
+        <img class="browser-frame__img" style="--obj: center top" src="../assets/projects/monsterlab-campus.webp" width="1600" height="910" decoding="async" alt="Central Campus social hub in Roblox Studio: paved plaza, orbital core, terraces and landmark facades" />
+      </div>
+      <figcaption class="figure__caption">Central Campus social hub, native Studio capture &mdash; current gameplay blockout, environment art still in progress.</figcaption>
+    </figure>
+
+    <section class="case-section">
+      <p class="case-kicker">01 Problem</p>
+      <div class="case-prose">
+        <p>Most creature-collection games separate the collecting from the place: the lab is a menu. I wanted the laboratory itself to be the progression system &mdash; a facility whose wings, machines, and layout gate what you can discover, with a social campus around it for showing off what you made.</p>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <p class="case-kicker">02 Approach</p>
+      <div class="case-prose">
+        <p>The game is a <strong>48-discovery content graph</strong> over twelve base families, four tiers, five machines, six catalysts, and four scheduled events &mdash; all data-driven, with gameplay, economy, and progression gates frozen while the world is built. A <strong>Central Campus</strong> social hub (transit, discovery hall, observatory, supply, directory, exchange) surrounds a <strong>Personal Lab</strong> that grows from a warm improvised Garage through Research and Mutation wings to a dark Forbidden chamber.</p>
+        <p>Profiles are <strong>deterministic and fenced</strong> (leases, crash recovery from committed checkpoints, bounded offline progress), and travel between the two places uses destination-bound tickets with cancellation recovery. The current art phase builds a <strong>reusable environment kit first</strong> &mdash; chunky modular industrial-science forms, restrained PBR surfaces &mdash; and applies it to both worlds, with native Studio captures and independent review at every checkpoint rather than author judgment alone.</p>
+      </div>
+      <figure class="figure">
+        <div class="browser-frame browser-frame--wide">
+          <div class="browser-frame__bar">
+            <span class="browser-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <span class="browser-frame__url">Roblox Studio &mdash; Personal Lab Garage</span>
+          </div>
+          <img class="browser-frame__img" style="--obj: center top" src="../assets/projects/monsterlab-lab.webp" width="1600" height="910" loading="lazy" decoding="async" alt="Personal Lab Garage in Roblox Studio: warm compact workshop with shaped equipment" />
+        </div>
+        <figcaption class="figure__caption">Personal Lab Garage, native Studio capture &mdash; the permanent starting wing every later tier grows from.</figcaption>
+      </figure>
+    </section>
+
+    <section class="case-section">
+      <p class="case-kicker">03 Tech stack</p>
+      <div class="stack-group">
+        <p class="stack-group__label">Game</p>
+        <div class="stack-chips"><span class="chip">Luau</span><span class="chip">Roblox Studio</span><span class="chip">Rojo</span></div>
+      </div>
+      <div class="stack-group">
+        <p class="stack-group__label">Quality</p>
+        <div class="stack-chips"><span class="chip">Lune suites</span><span class="chip">Selene</span><span class="chip">StyLua</span></div>
+      </div>
+      <div class="stack-group">
+        <p class="stack-group__label">Art</p>
+        <div class="stack-chips"><span class="chip">Blender</span><span class="chip">Modular kit</span><span class="chip">PBR variants</span></div>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <p class="case-kicker">04 Outcome</p>
+      <div class="stat-cards">
+        <div class="stat-card"><p class="stat-card__n">48</p><p class="stat-card__l">discoveries across twelve base families, four tiers, and five machines</p></div>
+        <div class="stat-card"><p class="stat-card__n">46</p><p class="stat-card__l">Lune suites plus formatting, lint, type analysis, and three Rojo builds green</p></div>
+      </div>
+      <div class="case-prose" style="margin-top:24px">
+        <p>Gameplay systems are implemented and exercised with two-client Studio fixtures (admission, travel cancellation, production, events). The environments are an honest <strong>gameplay blockout / advanced programmer art</strong> &mdash; native captures, frame samples, and walking fixtures are recorded as evidence, and full-world art acceptance stays open until the kit application passes review. No experience publication yet.</p>
+      </div>
+    </section>
+
+    <nav class="case-nav" aria-label="More projects">
+      <a class="case-nav__prev" href="job-fraud.html"><span class="case-nav__dir">&larr; Previous</span><span class="case-nav__name">Job Fraud Scanner</span></a>
+      <span class="case-nav__empty"></span>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="year">2026</span> Yelnil Gabo &middot; yelgabo.com</p>
+  </footer>
+
+  <script>
+    (function () {
+      var y = document.getElementById('year');
+      if (y) y.textContent = String(new Date().getFullYear());
+    })();
+  </script>
+</body>
+</html>

@@ -168,33 +168,31 @@
       <header class="section-head work-intro">
         <p class="section-kicker">Projects</p>
         <h2 id="projects-title" class="section-title">Selected Projects</h2>
-        <p class="work-lead">Four things I designed, built, and shipped end to end on my own time &mdash; from a dependency-free game server to an end-to-end-encrypted sync product.</p>
+        <p class="work-lead">Three things I designed, built, and ship on my own time &mdash; from tracking market-moving voices to auditing job postings to building a Roblox monster-creation game.</p>
       </header>
       <hr class="work-rule" />
 
       <div class="features">
 
-        <article class="feature" style="--proj:#b3122d">
+        <article class="feature" style="--proj:#c2410c">
           <div class="feature__media reveal">
-            <figure class="browser-frame browser-frame--dark">
-              <div class="browser-frame__bar">
-                <span class="browser-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
-                <span class="browser-frame__url">kimbo.up.railway.app</span>
+            <figure class="browser-frame browser-frame--poster">
+              <div class="poster">
+                <p class="poster__cap">feed &middot; timeline &middot; aggregates &middot; picks board with provenance</p>
               </div>
-              <img class="browser-frame__img" style="--obj: left top" src="assets/projects/kimbo.webp?v=2" width="1600" height="1000" loading="lazy" decoding="async" alt="Kimbo &mdash; dark editorial browser Tetris UI with leaderboard" />
             </figure>
           </div>
           <div class="feature__text reveal">
             <span class="feature__folio">01</span>
-            <p class="feature__kicker">Game &middot; Python &middot; SQLite</p>
-            <h3 class="feature__title">Kimbo</h3>
-            <p class="feature__tagline">Endless browser Tetris with a global leaderboard.</p>
-            <p class="feature__blurb">A no-build, zero-dependency take on Tetris: shared high scores and per-score replays, served by a stdlib-only Python backend over SQLite.</p>
-            <p class="feature__spec"><span>Solo build</span><span>Python &middot; SQLite</span><span>Live</span></p>
-            <a class="feature__cta" href="work/kimbo.html">View case study <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <p class="feature__kicker">Markets &middot; LLM &middot; Data pipeline</p>
+            <h3 class="feature__title">Imelda</h3>
+            <p class="feature__tagline">Which public-figure posts move markets &mdash; and by how much?</p>
+            <p class="feature__blurb">Ingests public-figure posts plus official Federal Register actions, extracts affected stocks and industries with Claude, joins daily price bars, and serves a Feed, Timeline, and Aggregates UI with provenance.</p>
+            <p class="feature__spec"><span>Solo build</span><span>TypeScript &middot; Fastify &middot; Postgres</span><span>Live</span></p>
+            <a class="feature__cta" href="work/imelda.html">View case study <span class="arrow" aria-hidden="true">&rarr;</span></a>
             <span class="feature__links">
-              <a class="link-cta" href="https://kimbo-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
-              <a class="link-cta is-ghost" href="https://github.com/yelgabo/kimbo" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+              <a class="link-cta" href="https://imelda-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
+              <a class="link-cta is-ghost" href="https://github.com/yelgabo/imelda" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
             </span>
           </div>
         </article>
@@ -224,51 +222,26 @@
           </div>
         </article>
 
-        <article class="feature" style="--proj:#16a34a">
+        <article class="feature" style="--proj:#9333ea">
           <div class="feature__media reveal">
-            <figure class="browser-frame">
+            <figure class="browser-frame browser-frame--wide">
               <div class="browser-frame__bar">
                 <span class="browser-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
-                <span class="browser-frame__url">anki-srs.up.railway.app</span>
+                <span class="browser-frame__url">Roblox Studio &mdash; Central Campus</span>
               </div>
-              <img class="browser-frame__img" style="--obj: left top" src="assets/projects/anki-srs.webp" width="1600" height="1000" loading="lazy" decoding="async" alt="anki-srs &mdash; spaced repetition for coding interview problems" />
+              <img class="browser-frame__img" style="--obj: center top" src="assets/projects/monsterlab-campus.webp" width="1600" height="910" loading="lazy" decoding="async" alt="Monster Lab &mdash; Central Campus social hub captured in Roblox Studio" />
             </figure>
           </div>
           <div class="feature__text reveal">
             <span class="feature__folio">03</span>
-            <p class="feature__kicker">Learning &middot; SM-2 &middot; Web</p>
-            <h3 class="feature__title">anki-srs</h3>
-            <p class="feature__tagline">Spaced repetition for coding-interview problems.</p>
-            <p class="feature__blurb">151 NeetCode problems scheduled with the SM-2 algorithm &mdash; daily streaks with auto-freezes, keyboard shortcuts, and a layout that works on your phone on the train.</p>
-            <p class="feature__spec"><span>Solo build</span><span>Next.js &middot; Postgres &middot; Auth.js</span><span>Live</span></p>
-            <a class="feature__cta" href="work/anki-srs.html">View case study <span class="arrow" aria-hidden="true">&rarr;</span></a>
+            <p class="feature__kicker">Game &middot; Roblox &middot; Luau</p>
+            <h3 class="feature__title">Monster Lab</h3>
+            <p class="feature__tagline">A Roblox game where the lab you build gates what you can create.</p>
+            <p class="feature__blurb">48 discoveries over twelve monster families, four lab tiers, and five machines &mdash; a social Central Campus around a Personal Lab that grows from Garage to Forbidden chamber.</p>
+            <p class="feature__spec"><span>Solo build</span><span>Luau &middot; Rojo &middot; Studio</span><span>In development</span></p>
+            <a class="feature__cta" href="work/monsterlab.html">View case study <span class="arrow" aria-hidden="true">&rarr;</span></a>
             <span class="feature__links">
-              <a class="link-cta" href="https://anki-srs-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
-              <a class="link-cta is-ghost" href="https://github.com/yelgabo/anki-srs" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
-            </span>
-          </div>
-        </article>
-
-        <article class="feature" style="--proj:#4f46e5">
-          <div class="feature__media reveal">
-            <figure class="browser-frame browser-frame--poster">
-              <div class="poster">
-                <img src="assets/projects/claude-sync-icon.webp" width="104" height="104" loading="lazy" decoding="async" alt="Claude Sync app icon" />
-                <p class="poster__cap">end-to-end encrypted &middot; Windows + macOS &middot; read-only web</p>
-              </div>
-            </figure>
-          </div>
-          <div class="feature__text reveal">
-            <span class="feature__folio">04</span>
-            <p class="feature__kicker">Product &middot; E2E Crypto &middot; Electron</p>
-            <h3 class="feature__title">Claude Sync</h3>
-            <p class="feature__tagline">Get the same Claude on every computer.</p>
-            <p class="feature__blurb">End-to-end encrypted sync for your Claude Code setup &mdash; skills, commands, agents, and memory follow you to every machine. Native desktop apps for Windows &amp; macOS, plus a read-only web client.</p>
-            <p class="feature__spec"><span>Solo build</span><span>TypeScript &middot; Fastify &middot; Electron</span><span>Released</span></p>
-            <a class="feature__cta" href="work/claude-sync.html">View case study <span class="arrow" aria-hidden="true">&rarr;</span></a>
-            <span class="feature__links">
-              <a class="link-cta" href="https://claude-sync-production.up.railway.app" target="_blank" rel="noopener">Live <span class="arrow" aria-hidden="true">&#8599;</span></a>
-              <a class="link-cta is-ghost" href="https://github.com/yelgabo/claude-sync" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+              <a class="link-cta" href="https://github.com/yelgabo/monsterlab" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
             </span>
           </div>
         </article>

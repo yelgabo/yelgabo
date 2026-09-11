@@ -4,13 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Job Fraud Scanner — Case Study · Yelnil Gabo</title>
-  <meta name="description" content="An evidence-backed scanner that scores every software job posting on WorkBC for genuine local-hire intent — brand-impersonation detection, NOC categories, and a per-posting audit trail." />
+  <meta name="description" content="An evidence-backed scanner that scores all 16,785 WorkBC job postings for genuine local-hire intent — brand-impersonation detection, risk bands by job type, and a per-posting audit trail." />
   <meta name="theme-color" content="#fafaf9" />
 
   <meta property="og:type" content="article" />
   <meta property="og:url" content="https://yelgabo.com/work/job-fraud.html" />
   <meta property="og:title" content="Job Fraud Scanner — Case Study · Yelnil Gabo" />
-  <meta property="og:description" content="Scores every software posting on WorkBC for genuine local-hire intent, with an auditable LLM judge. 3,460 postings scored." />
+  <meta property="og:description" content="Scores all 16,785 WorkBC postings for genuine local-hire intent, with an auditable LLM judge." />
 
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0a'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' font-family='-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif' font-weight='800' font-size='30' fill='%23fafaf9' letter-spacing='-1'%3Eyg%3C/text%3E%3C/svg%3E" />
 
@@ -32,7 +32,7 @@
       <span class="case-hero__folio">02</span>
       <p class="case-hero__kicker">Scanner &middot; LLM &middot; Audit</p>
       <h1 class="case-hero__title">Job Fraud Scanner</h1>
-      <p class="case-hero__tagline">Which BC tech job postings are a genuine local hire &mdash; and which exist for other reasons?</p>
+      <p class="case-hero__tagline">Which WorkBC job postings are a genuine local hire &mdash; and which exist for other reasons?</p>
       <div class="cta-row">
         <a class="link-cta" href="https://job-fraud-production.up.railway.app" target="_blank" rel="noopener">View it live <span class="arrow" aria-hidden="true">&#8599;</span></a>
         <a class="link-cta is-ghost" href="https://github.com/yelgabo/job-fraud" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
@@ -60,14 +60,14 @@
     <section class="case-section">
       <p class="case-kicker">01 Problem</p>
       <div class="case-prose">
-        <p>WorkBC is British Columbia's public job board, but not every &ldquo;software&rdquo; posting is a real local opening. Some are credential-harvesting fronts, brand impersonations that route applicants to a host that isn't the named employer, or ghost ads that exist for reasons other than hiring. I wanted an honest, evidence-backed read on how many tech postings actually look like a genuine attempt to hire locally &mdash; not a vibe, but a score I could defend.</p>
+        <p>WorkBC is British Columbia's public job board, but not every posting is a real local opening. Some are credential-harvesting fronts, brand impersonations that route applicants to a host that isn't the named employer, or ghost ads that exist for reasons other than hiring. I wanted an honest, evidence-backed read on how many postings actually look like a genuine attempt to hire locally &mdash; not a vibe, but a score I could defend. The scanner started with software postings and has since grown to the whole board.</p>
       </div>
     </section>
 
     <section class="case-section">
       <p class="case-kicker">02 Approach</p>
       <div class="case-prose">
-        <p>A scraper pulls the tech postings; each one is scored by an <strong>LLM judge (Claude Haiku)</strong> against explicit fraud signals rather than gut feel: generic email domains, an apply-host that differs from the stated employer (brand impersonation), businesses that can't be verified, and NOC job-type mismatches.</p>
+        <p>A scraper pulls the postings; each one is scored by an <strong>LLM judge (Claude Haiku)</strong> against explicit fraud signals rather than gut feel: generic email domains, an apply-host that differs from the stated employer (brand impersonation), businesses that can't be verified, and NOC job-type mismatches.</p>
         <p>Crucially, every verdict keeps a <strong>web-search audit trail</strong> at an unlinked <code>/audit/&lt;token&gt;</code> URL, so any score can be inspected after the fact &mdash; the judge has to show its work. An <strong>/analysis</strong> page rolls the whole corpus up into elevated-risk rates by job type, counting companies once (by their worst posting) so a few large legitimate employers don't mask how many distinct companies look suspicious.</p>
       </div>
       <figure class="figure">
@@ -101,11 +101,11 @@
     <section class="case-section">
       <p class="case-kicker">04 Outcome</p>
       <div class="stat-cards">
-        <div class="stat-card"><p class="stat-card__n">3,460</p><p class="stat-card__l">software &amp; tech postings scored across the corpus</p></div>
-        <div class="stat-card"><p class="stat-card__n">8.3%</p><p class="stat-card__l">of postings flagged elevated-risk &mdash; 14.1% of companies</p></div>
+        <div class="stat-card"><p class="stat-card__n">16,785</p><p class="stat-card__l">WorkBC postings scored &mdash; the whole board, continuously refreshed</p></div>
+        <div class="stat-card"><p class="stat-card__n">7.7%</p><p class="stat-card__l">of postings flagged elevated-risk &mdash; 20.2% of 3,877 companies</p></div>
       </div>
       <div class="case-prose" style="margin-top:24px">
-        <p>The full WorkBC tech corpus is scored and continuously refreshed, and every score is auditable &mdash; the point was never to accuse, but to make the signal inspectable. The framing throughout is &ldquo;automated screening signals, not verdicts.&rdquo;</p>
+        <p>The full WorkBC corpus is scored and continuously refreshed, and every score is auditable &mdash; the point was never to accuse, but to make the signal inspectable. The framing throughout is &ldquo;automated screening signals, not verdicts.&rdquo;</p>
       </div>
     </section>
 

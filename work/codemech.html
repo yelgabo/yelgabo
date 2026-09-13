@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CodeMech — Case Study · Yelnil Gabo</title>
+  <meta name="description" content="CodeMech — a drill site for coding mechanics: vectors, adjacency lists, DSU, Fenwick trees and friends, in C++, Python, or JavaScript. Next.js + Postgres + Judge0." />
+  <meta name="theme-color" content="#fafaf9" />
+
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://yelgabo.com/work/codemech.html" />
+  <meta property="og:title" content="CodeMech — Case Study · Yelnil Gabo" />
+  <meta property="og:description" content="Drill the mechanics behind the algorithms: small judged exercises in C++, Python, or JavaScript, with instant verdicts." />
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0a'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' font-family='-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif' font-weight='800' font-size='30' fill='%23fafaf9' letter-spacing='-1'%3Eyg%3C/text%3E%3C/svg%3E" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" />
+  <link rel="stylesheet" href="../styles.css?v=2" />
+</head>
+<body class="proj-codemech" style="--proj:#0d9488">
+  <header class="subnav">
+    <div class="subnav__inner">
+      <a class="subnav__back" href="../index.html#projects"><span class="arrow" aria-hidden="true">&larr;</span> All projects</a>
+      <span class="subnav__proj"><span class="subnav__dot" aria-hidden="true"></span> CodeMech</span>
+    </div>
+  </header>
+
+  <main class="case">
+    <section class="case-hero">
+      <span class="case-hero__folio">04</span>
+      <p class="case-hero__kicker">Practice &middot; Judge &middot; C++ / Python / JS</p>
+      <h1 class="case-hero__title">CodeMech</h1>
+      <p class="case-hero__tagline">You can explain DP &mdash; but can you type the table?</p>
+      <div class="cta-row">
+        <a class="link-cta" href="https://web-production-4173a.up.railway.app" target="_blank" rel="noopener">Drill it live <span class="arrow" aria-hidden="true">&#8599;</span></a>
+        <a class="link-cta is-ghost" href="https://github.com/yelgabo/codemech" target="_blank" rel="noopener">GitHub <span class="arrow" aria-hidden="true">&#8599;</span></a>
+      </div>
+    </section>
+
+    <div class="meta-strip">
+      <div class="meta-strip__field"><span class="meta-strip__k">Role</span><span class="meta-strip__v">Solo &mdash; design &amp; build</span></div>
+      <div class="meta-strip__field"><span class="meta-strip__k">Year</span><span class="meta-strip__v">2026</span></div>
+      <div class="meta-strip__field"><span class="meta-strip__k">Stack</span><span class="meta-strip__v">Next.js &middot; Prisma &middot; Judge0</span></div>
+      <div class="meta-strip__field"><span class="meta-strip__k">Status</span><span class="meta-strip__v is-accent">Live</span></div>
+    </div>
+
+    <figure class="figure">
+      <div class="browser-frame browser-frame--wide">
+        <div class="browser-frame__bar">
+          <span class="browser-frame__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+          <span class="browser-frame__url">web-production-4173a.up.railway.app/problems</span>
+        </div>
+        <img class="browser-frame__img" style="--obj: center top" src="../assets/projects/codemech.webp" width="1600" height="1000" decoding="async" alt="CodeMech problems index with grouped drills by category and difficulty" />
+      </div>
+      <figcaption class="figure__caption">The problems index &mdash; grouped drills across arrays, graphs, DSU, and prefix structures, each judged on submit.</figcaption>
+    </figure>
+
+    <section class="case-section">
+      <p class="case-kicker">01 Problem</p>
+      <div class="case-prose">
+        <p>Interview prep drills whole algorithms, but failures usually sit one level lower: the constructions every solution starts with. Sizing a 2D vector, building an adjacency list, path-compressing a DSU, querying a Fenwick tree. Fumble those mechanics and the clever part never gets written.</p>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <p class="case-kicker">02 Approach</p>
+      <div class="case-prose">
+        <p>CodeMech is a drill site for exactly that layer: <strong>54 small judged exercises</strong> across vectors, difference arrays, two pointers, graphs, DSU, Fenwick and segment trees, tries, and monotonic structures. Each problem ships a statement, a starter, a harness, and reference solutions, in <strong>C++, Python, or JavaScript</strong> wherever the mechanic applies.</p>
+        <p>Submissions compile and run through <strong>Judge0</strong> in production, with a sandbox-free local judge for zero-key dev loops. Problems are file-defined under <strong>problems/&lt;slug&gt;/</strong> and seeded into Postgres, grouped into assessment sets with free-tier and repeat-gap rules. A per-user daily judge quota, auth with verified-email admin gating, password reset, and Stripe passes round out the site.</p>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <p class="case-kicker">03 Tech stack</p>
+      <div class="stack-group">
+        <p class="stack-group__label">Frontend</p>
+        <div class="stack-chips"><span class="chip">Next.js 16 (App Router)</span><span class="chip">React 19</span><span class="chip">Monaco editor</span><span class="chip">Tailwind</span></div>
+      </div>
+      <div class="stack-group">
+        <p class="stack-group__label">Backend</p>
+        <div class="stack-chips"><span class="chip">Prisma</span><span class="chip">Postgres</span><span class="chip">NextAuth</span><span class="chip">Judge0</span><span class="chip">Zod</span></div>
+      </div>
+      <div class="stack-group">
+        <p class="stack-group__label">Infrastructure</p>
+        <div class="stack-chips"><span class="chip">Railway</span><span class="chip">Stripe</span><span class="chip">Vitest</span><span class="chip">Playwright e2e</span></div>
+      </div>
+    </section>
+
+    <section class="case-section">
+      <p class="case-kicker">04 Outcome</p>
+      <div class="stat-cards">
+        <div class="stat-card"><p class="stat-card__n">54</p><p class="stat-card__l">judged drills across arrays, graphs, DSU, and range structures</p></div>
+        <div class="stat-card"><p class="stat-card__n">3</p><p class="stat-card__l">languages &mdash; C++, Python, and JavaScript with per-language limits</p></div>
+      </div>
+      <div class="case-prose" style="margin-top:24px">
+        <p>It is live with signup, judging, assessment sets, and premium passes. The catalog is validated by a problem-layout gate, unit tests, and e2e specs, and a two-minute local setup (no API keys) keeps adding a drill as cheap as adding a directory.</p>
+      </div>
+    </section>
+
+    <nav class="case-nav" aria-label="More projects">
+      <a class="case-nav__prev" href="monsterlab.html"><span class="case-nav__dir">&larr; Previous</span><span class="case-nav__name">Monster Lab</span></a>
+      <span class="case-nav__empty"></span>
+    </nav>
+  </main>
+
+  <footer class="site-footer">
+    <p>&copy; <span id="year">2026</span> Yelnil Gabo &middot; yelgabo.com</p>
+  </footer>
+
+  <script>
+    (function () {
+      var y = document.getElementById('year');
+      if (y) y.textContent = String(new Date().getFullYear());
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rectangle plotter</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#f7f6f1;--ink:#1d2430;--grid:#d5dce8;--axis:#6b7a90;--a:#1f6fd6;--b:#d8541f;--both:#5b3fb0;--muted:#5c6675;--bad:#b3261e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif}
+main{max-width:1120px;margin:0 auto;padding:28px 24px 48px;display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:start}
+h1{font-size:20px;font-weight:600;margin:0 0 6px}
+.hint{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.5}
+code{font-family:"IBM Plex Mono",monospace;font-size:13px}
+label{display:block;font-size:14px;margin:14px 0 6px}
+input{width:100%;font:15px "IBM Plex Mono",monospace;padding:9px 10px;border:1.5px solid var(--grid);border-radius:4px;background:#fff;color:var(--ink)}
+input:focus{outline:2px solid var(--a);outline-offset:1px;border-color:var(--a)}
+input.b:focus{outline-color:var(--b);border-color:var(--b)}
+.swatch{display:inline-block;width:10px;height:10px;margin-right:6px;border-radius:2px}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin-top:8px}
+.result{margin-top:16px;padding:12px 14px;border-left:3px solid var(--both);background:#fff;font-size:14px;line-height:1.7}
+.result strong{font-weight:600}
+svg{width:100%;height:auto;display:block;background:#fff;border:1.5px solid var(--grid);border-radius:4px}
+text{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--muted)}
+@media(max-width:760px){main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<section>
+<h1>Rectangle plotter</h1>
+<p class="hint">Each rectangle is <code>[x1, y1, x2, y2]</code>: bottom-left corner, then top-right corner. The plot and overlap check update as you type.</p>
+<label for="r1"><span class="swatch" style="background:var(--a)"></span>rec1</label>
+<input id="r1" value="[0,0,1,1]" spellcheck="false" autocomplete="off">
+<label for="r2"><span class="swatch" style="background:var(--b)"></span>rec2</label>
+<input id="r2" class="b" value="[1,0,2,1]" spellcheck="false" autocomplete="off">
+<div class="err" id="err"></div>
+<div class="result" id="res"></div>
+</section>
+<section><svg id="plot" viewBox="0 0 720 560" role="img" aria-label="Plot of the two rectangles"></svg></section>
+</main>
+<script>
+const W = 720, H = 560, PAD = { l: 44, r: 20, t: 20, b: 36 };
+const r1El = document.getElementById('r1');
+const r2El = document.getElementById('r2');
+const errEl = document.getElementById('err');
+const resEl = document.getElementById('res');
+const svg = document.getElementById('plot');
+
+function parse(text) {
+  const parts = text.replace(/[\[\]()]/g, '').split(',');
+  const nums = [];
+  for (const p of parts) {
+    const t = p.trim();
+    if (t === '') continue;
+    nums.push(Number(t));
+  }
+  if (nums.length !== 4 || nums.some(n => Number.isNaN(n))) return null;
+  return nums;
+}
+
+function niceStep(raw) {
+  const pow = Math.pow(10, Math.floor(Math.log10(raw)));
+  const candidates = [1, 2, 5, 10];
+  for (const c of candidates) {
+    if (c * pow >= raw) return c * pow;
+  }
+  return 10 * pow;
+}
+
+function fmt(n) {
+  return Number.isInteger(n) ? String(n) : String(Number(n.toFixed(4)));
+}
+
+function el(name, attrs, textContent) {
+  const node = document.createElementNS('http://www.w3.org/2000/svg', name);
+  for (const k in attrs) node.setAttribute(k, attrs[k]);
+  if (textContent !== undefined) node.textContent = textContent;
+  svg.appendChild(node);
+  return node;
+}
+
+function draw() {
+  const r1 = parse(r1El.value);
+  const r2 = parse(r2El.value);
+  if (!r1 || !r2) {
+    errEl.textContent = 'Each rectangle needs four numbers: [x1, y1, x2, y2].';
+    return;
+  }
+  const badOrder = [r1, r2].some(r => r[0] > r[2] || r[1] > r[3]);
+  if (badOrder) {
+    errEl.textContent = 'Needs x1 <= x2 and y1 <= y2 for both rectangles.';
+    return;
+  }
+  errEl.textContent = '';
+
+  // Plot range: one unit of padding beyond the rectangles, snapped to integers.
+  const minX = Math.floor(Math.min(r1[0], r2[0])) - 1;
+  const maxX = Math.ceil(Math.max(r1[2], r2[2])) + 1;
+  const minY = Math.floor(Math.min(r1[1], r2[1])) - 1;
+  const maxY = Math.ceil(Math.max(r1[3], r2[3])) + 1;
+  const spanX = maxX - minX;
+  const spanY = maxY - minY;
+
+  // Same scale on both axes so squares look square.
+  const scale = Math.min((W - PAD.l - PAD.r) / spanX, (H - PAD.t - PAD.b) / spanY);
+  const plotW = spanX * scale;
+  const plotH = spanY * scale;
+  const ox = PAD.l + ((W - PAD.l - PAD.r) - plotW) / 2;
+  const oy = PAD.t + ((H - PAD.t - PAD.b) - plotH) / 2;
+  const X = x => ox + (x - minX) * scale;
+  const Y = y => oy + plotH - (y - minY) * scale;
+
+  const allInt = [...r1, ...r2].every(Number.isInteger);
+  let step = niceStep(Math.max(spanX, spanY) / 16);
+  if (allInt && step < 1) step = 1;
+
+  svg.innerHTML = '';
+
+  // Grid lines and tick labels.
+  for (let x = Math.ceil(minX / step) * step; x <= maxX + 1e-9; x += step) {
+    const isAxis = Math.abs(x) < 1e-9;
+    el('line', { x1: X(x), y1: Y(minY), x2: X(x), y2: Y(maxY),
+      stroke: isAxis ? 'var(--axis)' : 'var(--grid)', 'stroke-width': isAxis ? 1.5 : 1 });
+    el('text', { x: X(x), y: Y(minY) + 16, 'text-anchor': 'middle' }, fmt(x));
+  }
+  for (let y = Math.ceil(minY / step) * step; y <= maxY + 1e-9; y += step) {
+    const isAxis = Math.abs(y) < 1e-9;
+    el('line', { x1: X(minX), y1: Y(y), x2: X(maxX), y2: Y(y),
+      stroke: isAxis ? 'var(--axis)' : 'var(--grid)', 'stroke-width': isAxis ? 1.5 : 1 });
+    el('text', { x: X(minX) - 8, y: Y(y) + 4, 'text-anchor': 'end' }, fmt(y));
+  }
+
+  // Rectangles.
+  const rects = [[r1, 'var(--a)', 'rec1'], [r2, 'var(--b)', 'rec2']];
+  for (const [r, color, name] of rects) {
+    el('rect', { x: X(r[0]), y: Y(r[3]), width: X(r[2]) - X(r[0]), height: Y(r[1]) - Y(r[3]),
+      fill: color, 'fill-opacity': 0.22, stroke: color, 'stroke-width': 2 });
+  }
+
+  // Intersection.
+  const ix1 = Math.max(r1[0], r2[0]);
+  const iy1 = Math.max(r1[1], r2[1]);
+  const ix2 = Math.min(r1[2], r2[2]);
+  const iy2 = Math.min(r1[3], r2[3]);
+  const iw = ix2 - ix1;
+  const ih = iy2 - iy1;
+  const overlaps = iw > 0 && ih > 0;
+  if (overlaps) {
+    el('rect', { x: X(ix1), y: Y(iy2), width: X(ix2) - X(ix1), height: Y(iy1) - Y(iy2),
+      fill: 'var(--both)', 'fill-opacity': 0.45, stroke: 'var(--both)', 'stroke-width': 2 });
+  }
+
+  // Corner labels, drawn last so they sit on top.
+  for (const [r, color, name] of rects) {
+    el('text', { x: X(r[0]) - 4, y: Y(r[1]) + 14, 'text-anchor': 'end', fill: color, 'font-weight': 500 },
+      '(' + fmt(r[0]) + ', ' + fmt(r[1]) + ')');
+    el('text', { x: X(r[2]) + 4, y: Y(r[3]) - 6, 'text-anchor': 'start', fill: color, 'font-weight': 500 },
+      '(' + fmt(r[2]) + ', ' + fmt(r[3]) + ')');
+    el('text', { x: X((r[0] + r[2]) / 2), y: Y((r[1] + r[3]) / 2) + 4, 'text-anchor': 'middle', fill: color, 'font-weight': 500 }, name);
+  }
+
+  // Result panel.
+  let verdict;
+  if (overlaps) {
+    verdict = '<strong>Overlap: yes</strong>, area ' + fmt(iw * ih);
+  } else if (iw >= 0 && ih >= 0) {
+    verdict = '<strong>Overlap: no</strong> (they touch, area 0)';
+  } else {
+    verdict = '<strong>Overlap: no</strong> (gap between them)';
+  }
+  resEl.innerHTML =
+    verdict + '<br>' +
+    '<code>x: max(' + fmt(r1[0]) + ', ' + fmt(r2[0]) + ') = ' + fmt(ix1) + ' to min(' + fmt(r1[2]) + ', ' + fmt(r2[2]) + ') = ' + fmt(ix2) + ', width ' + fmt(iw) + '</code><br>' +
+    '<code>y: max(' + fmt(r1[1]) + ', ' + fmt(r2[1]) + ') = ' + fmt(iy1) + ' to min(' + fmt(r1[3]) + ', ' + fmt(r2[3]) + ') = ' + fmt(iy2) + ', height ' + fmt(ih) + '</code>';
+}
+
+r1El.addEventListener('input', draw);
+r2El.addEventListener('input', draw);
+draw();
+</script>
+</body>
+</html>

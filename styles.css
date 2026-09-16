@@ -386,8 +386,10 @@ main {
 }
 .feature:hover .feature__cta .arrow { transform: translateX(4px); }
 .feature:hover .feature__folio { color: var(--proj, var(--ink-dim)); }
-/* stretched link: whole row (incl. screenshot) navigates to the case study */
-.feature__cta::after {
+/* stretched link: whole card (incl. screenshot) navigates to the case study.
+   Scoped to .feature because .feature is the positioned ancestor that bounds
+   inset: 0; unscoped, the overlay escapes to the viewport and covers the hero. */
+.feature .feature__cta::after {
   content: "";
   position: absolute;
   inset: 0;

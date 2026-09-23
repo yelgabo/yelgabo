@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rate limiting with Redis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2F4F1;
+  --surface: #FFFFFF;
+  --ink: #18202C;
+  --muted: #566170;
+  --line: #D5DAD2;
+  --accent: #D99A00;
+  --accent-ink: #7D5600;
+  --allow: #2E7D5B;
+  --deny: #B8322A;
+  --stale: #9AA3AE;
+  --code-bg: #19202B;
+  --code-ink: #DCE3EC;
+  --table-head: #E7EBE5;
+  color-scheme: light;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131820;
+    --surface: #1B222C;
+    --ink: #DCE3EC;
+    --muted: #9AA6B5;
+    --line: #2C3542;
+    --accent: #F0B429;
+    --accent-ink: #F0B429;
+    --allow: #5CC196;
+    --deny: #F07167;
+    --stale: #5E6875;
+    --code-bg: #0E1319;
+    --code-ink: #DCE3EC;
+    --table-head: #222A35;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131820;
+  --surface: #1B222C;
+  --ink: #DCE3EC;
+  --muted: #9AA6B5;
+  --line: #2C3542;
+  --accent: #F0B429;
+  --accent-ink: #F0B429;
+  --allow: #5CC196;
+  --deny: #F07167;
+  --stale: #5E6875;
+  --code-bg: #0E1319;
+  --code-ink: #DCE3EC;
+  --table-head: #222A35;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 16px); scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+a { color: var(--accent-ink); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+code, pre, .mono { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+p code, li code, td code, dd code, figcaption code {
+  font-size: 0.88em;
+  background: var(--table-head);
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 18px 24px 0;
+}
+.topbar .site { font-weight: 700; color: var(--muted); text-decoration: none; }
+.theme-btn {
+  font: inherit;
+  font-size: 15px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 48px;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px 96px;
+}
+nav.toc {
+  position: sticky;
+  top: calc(env(safe-area-inset-top, 0px) + 24px);
+  align-self: start;
+  padding-top: 40px;
+  font-size: 15px;
+}
+nav.toc ol { list-style: none; margin: 0; padding: 0; }
+nav.toc li { margin: 0 0 8px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover { color: var(--ink); }
+main { min-width: 0; max-width: 900px; }
+
+/* Hero */
+.hero { padding: 40px 0 16px; }
+.hero h1 {
+  font-size: clamp(40px, 6vw, 72px);
+  line-height: 1.02;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px;
+  max-width: 14ch;
+}
+.lede { font-size: 20px; color: var(--muted); max-width: 60ch; margin: 0 0 28px; }
+
+/* Simulator */
+.sim {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 22px;
+}
+.sim-head { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: baseline; justify-content: space-between; margin-bottom: 14px; }
+.sim-head h2 { font-size: 20px; margin: 0; }
+.sim-rule { color: var(--muted); font-size: 15px; margin: 0; }
+.sim-controls { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+.btn {
+  font: inherit;
+  font-weight: 700;
+  border-radius: 10px;
+  padding: 10px 18px;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+}
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #1A1300; }
+.btn:active { transform: translateY(1px); }
+.track-wrap { position: relative; margin: 6px 0 4px; }
+.track {
+  position: relative;
+  height: 64px;
+  border-radius: 10px;
+  background: repeating-linear-gradient(90deg, transparent 0, transparent calc(100% / 15 - 1px), var(--line) calc(100% / 15 - 1px), var(--line) calc(100% / 15));
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.track .window {
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  width: calc(100% * 10 / 15);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-left: 2px solid var(--accent);
+}
+.track .dot {
+  position: absolute;
+  top: 50%;
+  width: 16px; height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  background: var(--allow);
+  box-shadow: 0 0 0 3px var(--surface);
+}
+.track .dot.stale { background: var(--stale); }
+.track-labels { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin-top: 6px; }
+.track-legend { font-size: 13px; color: var(--muted); display: flex; gap: 18px; flex-wrap: wrap; margin-top: 8px; }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: 0; }
+.status {
+  margin: 16px 0 12px;
+  font-weight: 700;
+  min-height: 1.6em;
+}
+.status.ok { color: var(--allow); }
+.status.no { color: var(--deny); }
+.sim-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 18px; }
+.sim-grid h3 { font-size: 14px; color: var(--muted); font-weight: 500; margin: 0 0 6px; }
+.sim-grid pre { margin: 0; min-height: 190px; }
+
+/* Content */
+section { padding-top: 56px; }
+section > h2 {
+  font-size: 32px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px;
+}
+section > h2 .num { color: var(--accent-ink); margin-right: 10px; }
+h3 { font-size: 21px; margin: 36px 0 10px; }
+p, ul, ol, dl { max-width: 72ch; }
+li { margin-bottom: 6px; }
+.note {
+  border-left: 3px solid var(--accent);
+  padding: 4px 0 4px 16px;
+  margin: 20px 0;
+  color: var(--ink);
+  max-width: 72ch;
+}
+
+pre {
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: 10px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 14px 0 20px;
+}
+.tk-kw { color: #C9A0F0; }
+.tk-str { color: #7CC9A0; }
+.tk-num { color: #F0B45A; }
+.tk-com { color: #7F8A99; font-style: italic; }
+.tk-out { color: #93A1B3; }
+.tk-prompt { color: #F0B429; }
+
+figure.card {
+  margin: 28px 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px 6px;
+}
+figure.card figcaption { font-weight: 700; font-size: 18px; margin-bottom: 4px; }
+figure.card .sub { color: var(--muted); font-size: 15px; margin: 0 0 6px; max-width: none; }
+.card-cols { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+.card-cols h4 { font-size: 13px; color: var(--muted); font-weight: 500; margin: 10px 0 0; }
+
+.table-wrap { overflow-x: auto; margin: 14px 0 20px; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--table-head); font-weight: 700; }
+td.mono, th.mono { font-size: 13.5px; white-space: nowrap; }
+.struct td { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 13.5px; white-space: nowrap; }
+.struct caption { caption-side: top; text-align: left; font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; font-size: 13.5px; font-weight: 500; padding: 0 0 6px; color: var(--ink); }
+.struct tr.gone td { color: var(--stale); text-decoration: line-through; }
+.struct tr.new td { color: var(--allow); font-weight: 500; }
+
+dl.facts dt { font-weight: 700; margin-top: 16px; }
+dl.facts dd { margin: 4px 0 0; }
+
+footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); }
+
+@media (max-width: 980px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  nav.toc { position: static; padding-top: 24px; }
+  nav.toc ol { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  nav.toc li { margin: 0; }
+  .sim-grid, .card-cols { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  .topbar, .layout { padding-left: 16px; padding-right: 16px; }
+  .sim, figure.card { padding-left: 14px; padding-right: 14px; }
+  pre { font-size: 13px; padding: 14px; }
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <a class="site" href="/">yelgabo</a>
+  <button class="theme-btn" id="themeBtn" type="button">Dark mode</button>
+</header>
+
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <ol>
+    <li><a href="#idea">The idea</a></li>
+    <li><a href="#toolkit">Redis toolkit</a></li>
+    <li><a href="#fixed">1. Fixed window</a></li>
+    <li><a href="#log">2. Sliding window log</a></li>
+    <li><a href="#counter">3. Sliding window counter</a></li>
+    <li><a href="#bucket">4. Token bucket</a></li>
+    <li><a href="#compare">Which to pick</a></li>
+    <li><a href="#wire">Wiring it into an app</a></li>
+    <li><a href="#prod">Production details</a></li>
+    <li><a href="#ref">Command reference</a></li>
+  </ol>
+</nav>
+
+<main>
+<div class="hero">
+  <h1>Rate limiting with Redis</h1>
+  <p class="lede">Four algorithms, the exact Redis commands behind each one, and the data structure they leave in memory after every request.</p>
+
+  <div class="sim" id="sim">
+    <div class="sim-head">
+      <h2>Try the sliding window log</h2>
+      <p class="sim-rule">Limit: 3 requests per 10,000 ms. Runs in your browser, replaying the commands a real Redis would execute.</p>
+    </div>
+    <div class="sim-controls">
+      <button class="btn primary" id="sendBtn" type="button">Send request</button>
+      <button class="btn" id="resetBtn" type="button">Reset</button>
+    </div>
+    <div class="track-wrap">
+      <div class="track" id="track" aria-hidden="true"><div class="window"></div></div>
+      <div class="track-labels"><span>15 s ago</span><span>10 s ago (window start)</span><span>now</span></div>
+      <div class="track-legend">
+        <span><span class="swatch" style="background:var(--allow)"></span>Inside the window, counted</span>
+        <span><span class="swatch" style="background:var(--stale)"></span>Outside the window, still stored until the next call trims it</span>
+      </div>
+    </div>
+    <div class="status" id="status" role="status" aria-live="polite">No requests yet. The key does not exist.</div>
+    <div class="sim-grid">
+      <div>
+        <h3>Stored in <code>rl:log:demo</code></h3>
+        <pre id="setView"></pre>
+      </div>
+      <div>
+        <h3>Commands run for the last request</h3>
+        <pre id="cmdView" data-lang="redis"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section id="idea">
+  <h2>The idea</h2>
+  <p>A rate limiter caps how many requests a client can make in a period of time. On every incoming request you identify the client (a user ID, an application programming interface (API) key, or an Internet Protocol (IP) address), check how much of its allowance it has used, and either let the request through or reject it with Hypertext Transfer Protocol (HTTP) status 429 Too Many Requests.</p>
+  <p>Redis is a good home for that allowance because:</p>
+  <ul>
+    <li>It is shared. Every app server checks the same numbers, so a client cannot dodge the limit by landing on a different server.</li>
+    <li>It is fast. Each check is one network round trip to an in-memory store.</li>
+    <li>It has atomic operations and server-side Lua scripts, so two servers checking at the same instant cannot both sneak a request through.</li>
+    <li>Keys can expire on their own, so state for idle clients cleans itself up.</li>
+  </ul>
+  <p>All keys on this page start with <code>rl:</code> (short for rate limit) so they are easy to find and never collide with other data.</p>
+</section>
+
+<section id="toolkit">
+  <h2>Redis toolkit</h2>
+  <p>Every algorithm below is built from a handful of commands. This section covers how each one behaves, including the edge cases that matter for rate limiting.</p>
+
+  <h3>Keys need no setup</h3>
+  <p>Everything in Redis lives under a key, and a data structure is created the first time you write to it. There is no schema and no create step. Commands that read or increment a missing key treat it as empty: <code>INCR</code> treats a missing key as <code>0</code>, increments it, and returns <code>1</code>.</p>
+
+  <figure class="card">
+    <figcaption>A counter from nothing</figcaption>
+    <pre data-lang="redis"># Build
+> INCR rl:user42:29310840
+(integer) 1
+> INCR rl:user42:29310840
+(integer) 2
+
+# Read
+> GET rl:user42:29310840
+"2"
+> EXISTS rl:user42:29999999
+(integer) 0</pre>
+  </figure>
+
+  <h3>Expiry: TTL, PEXPIRE, PEXPIREAT</h3>
+  <p>A key can carry a time to live (TTL), after which Redis deletes it. There are two ways to set one:</p>
+  <ul>
+    <li><strong>Relative:</strong> <code>EXPIRE key seconds</code> and <code>PEXPIRE key milliseconds</code> mean "delete this key that long from right now." Calling it again replaces the old deadline, so repeating the same number keeps pushing the deadline forward.</li>
+    <li><strong>Absolute:</strong> <code>PEXPIREAT key unix-ms</code> means "delete this key at this exact Unix timestamp in milliseconds."</li>
+  </ul>
+  <p>The <code>NX</code> flag (Redis 7 and later) sets the TTL only if the key has none yet, which lets you set a deadline once and leave it alone. TTLs apply to a whole key; there is no per-member expiry inside a sorted set.</p>
+
+  <figure class="card">
+    <figcaption>Relative expiry resets the deadline each call</figcaption>
+    <p class="sub">Three calls at three times. Each one replaces the previous deadline.</p>
+    <pre data-lang="redis"># Build
+PEXPIRE rl:log:user42 60000    # at t=1758650400123, deletes at 1758650460123
+PEXPIRE rl:log:user42 60000    # at t=1758650415456, deletes at 1758650475456
+PEXPIRE rl:log:user42 60000    # at t=1758650431789, deletes at 1758650491789
+
+# Same final deadline, written as an absolute time
+PEXPIREAT rl:log:user42 1758650491789
+
+# Read (at t=1758650431789)
+> PTTL rl:log:user42
+(integer) 60000</pre>
+  </figure>
+
+  <h3>Sorted sets</h3>
+  <p>A sorted set (ZSET) stores unique string <em>members</em>, each with a numeric <em>score</em>, kept ordered by score. The command shape is:</p>
+  <pre data-lang="redis">ZADD &lt;key&gt; &lt;score&gt; &lt;member&gt;</pre>
+  <ul>
+    <li><strong>key</strong> is the name of the sorted set. <code>ZADD</code> creates it if it does not exist.</li>
+    <li><strong>score</strong> is the number used for ordering.</li>
+    <li><strong>member</strong> is the item being stored. Each member appears at most once per set. Adding a member that already exists <strong>updates its score</strong> instead of adding a second copy, and <code>ZADD</code> returns <code>0</code>.</li>
+  </ul>
+  <p>The other sorted set commands used here:</p>
+  <ul>
+    <li><code>ZCARD key</code> returns the number of members (the set's cardinality). It is O(1) because Redis stores the size, and returns <code>0</code> for a missing key.</li>
+    <li><code>ZREMRANGEBYSCORE key min max</code> deletes every member whose score is between <code>min</code> and <code>max</code>, inclusive, and returns how many it deleted.</li>
+    <li><code>ZRANGE key start stop WITHSCORES</code> reads members by position, lowest score first. <code>0 -1</code> means all of them; <code>0 0</code> means just the oldest.</li>
+  </ul>
+
+  <figure class="card">
+    <figcaption>An existing member gets its score updated</figcaption>
+    <pre data-lang="redis"># Build
+> ZADD demo 1000 "request"
+(integer) 1                 # new member added
+> ZADD demo 5000 "request"
+(integer) 0                 # existing member, score updated
+
+# Read
+> ZRANGE demo 0 -1 WITHSCORES
+1) "request"
+2) "5000"                   # score 1000 is gone
+> ZCARD demo
+(integer) 1
+
+# Flags that change what happens to an existing member
+ZADD demo NX 5000 "request"   # only add new members, never update
+ZADD demo XX 5000 "request"   # only update existing members, never add
+ZADD demo GT 5000 "request"   # update only if the new score is greater
+ZADD demo LT 5000 "request"   # update only if the new score is less</pre>
+  </figure>
+
+  <h3>One set per user, or one set for everyone?</h3>
+  <p>The deciding question is what you need to compare or count. A leaderboard ranks users against each other, so all users share one set with one member per user. A rate limiter counts one user's recent requests and users never interact, so each user gets their own set with one member per request, and <code>ZCARD</code> on that set answers "how many requests did this user make recently." A single shared set would count everyone's requests together and lose the per-user number.</p>
+
+  <figure class="card">
+    <figcaption>Same command, different roles for key and member</figcaption>
+    <div class="card-cols">
+      <div>
+        <pre data-lang="redis"># Build: leaderboard, member = player
+ZADD leaderboard 4200 "alice"
+ZADD leaderboard 3900 "bob"
+
+# Build: rate limiter, member = one request
+ZADD rl:log:user42 1758650400123 "1758650400123-9f2c"
+ZADD rl:log:user42 1758650415456 "1758650415456-a71e"
+
+# Read
+> ZCARD leaderboard
+(integer) 2
+> ZCARD rl:log:user42
+(integer) 2</pre>
+      </div>
+      <div>
+        <div class="table-wrap"><table class="struct">
+          <caption>leaderboard</caption>
+          <tr><th>score</th><th>member</th></tr>
+          <tr><td>3900</td><td>"bob"</td></tr>
+          <tr><td>4200</td><td>"alice"</td></tr>
+        </table></div>
+        <div class="table-wrap"><table class="struct">
+          <caption>rl:log:user42</caption>
+          <tr><th>score</th><th>member</th></tr>
+          <tr><td>1758650400123</td><td>"1758650400123-9f2c"</td></tr>
+          <tr><td>1758650415456</td><td>"1758650415456-a71e"</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </figure>
+</section>
+
+<section id="fixed">
+  <h2><span class="num">1</span>Fixed window counter</h2>
+  <p>Split time into fixed buckets (for example, whole minutes) and count requests per bucket. The bucket number is <code>floor(unix_seconds / window_seconds)</code>, so the key name changes when a new window starts and the count starts over from 1. Each bucket key gets a TTL so old buckets delete themselves.</p>
+
+  <pre data-lang="python">import time
+import redis
+
+r = redis.Redis()
+
+def allow_fixed_window(client_id: str, limit: int, window_sec: int) -> bool:
+    bucket = int(time.time() // window_sec)
+    key = f"rl:{client_id}:{bucket}"
+
+    pipe = r.pipeline()                     # wraps both commands in MULTI/EXEC
+    pipe.incr(key)
+    pipe.expire(key, window_sec, nx=True)   # set the TTL only on the first request
+    results = pipe.execute()
+
+    count = results[0]
+    return count &lt;= limit</pre>
+
+  <p>The <code>NX</code> on <code>EXPIRE</code> matters: a bucket has a fixed end, so later requests should not push its deletion further out. Without any <code>EXPIRE</code>, every minute leaves a new key per client behind until memory fills.</p>
+
+  <figure class="card">
+    <figcaption>Two requests in one bucket</figcaption>
+    <p class="sub">Limit 3 per 60 s. Both requests at t = 1758650410 s, so bucket = 1758650410 // 60 = 29310840.</p>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build
+> INCR rl:user42:29310840
+(integer) 1
+> EXPIRE rl:user42:29310840 60 NX
+(integer) 1                 # TTL set
+> INCR rl:user42:29310840
+(integer) 2
+> EXPIRE rl:user42:29310840 60 NX
+(integer) 0                 # TTL already set, unchanged
+
+# Read (same second)
+> GET rl:user42:29310840
+"2"
+> TTL rl:user42:29310840
+(integer) 60</pre>
+      <div class="table-wrap"><table class="struct">
+        <tr><th>key</th><th>value</th><th>TTL</th></tr>
+        <tr><td>rl:user42:29310840</td><td>"2"</td><td>60 s</td></tr>
+      </table></div>
+    </div>
+  </figure>
+
+  <p>The weakness is the boundary burst. A client can use its whole allowance at the end of one bucket and again at the start of the next.</p>
+
+  <figure class="card">
+    <figcaption>Six requests in one second with a limit of 3</figcaption>
+    <p class="sub">Three requests at t = 1758650459 s (bucket 1758650459 // 60 = 29310840), then three at t = 1758650460 s (bucket 1758650460 // 60 = 29310841).</p>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build: t=1758650459
+> INCR rl:user42:29310840
+(integer) 1                 # allowed
+> EXPIRE rl:user42:29310840 60 NX
+(integer) 1
+> INCR rl:user42:29310840
+(integer) 2                 # allowed
+> EXPIRE rl:user42:29310840 60 NX
+(integer) 0
+> INCR rl:user42:29310840
+(integer) 3                 # allowed
+> EXPIRE rl:user42:29310840 60 NX
+(integer) 0
+
+# Build: t=1758650460, new bucket
+> INCR rl:user42:29310841
+(integer) 1                 # allowed
+> EXPIRE rl:user42:29310841 60 NX
+(integer) 1
+> INCR rl:user42:29310841
+(integer) 2                 # allowed
+> EXPIRE rl:user42:29310841 60 NX
+(integer) 0
+> INCR rl:user42:29310841
+(integer) 3                 # allowed
+> EXPIRE rl:user42:29310841 60 NX
+(integer) 0
+
+# Read
+> GET rl:user42:29310840
+"3"
+> GET rl:user42:29310841
+"3"</pre>
+      <div class="table-wrap"><table class="struct">
+        <tr><th>key</th><th>value</th></tr>
+        <tr><td>rl:user42:29310840</td><td>"3"</td></tr>
+        <tr><td>rl:user42:29310841</td><td>"3"</td></tr>
+      </table></div>
+    </div>
+  </figure>
+
+  <p><strong>Tradeoff:</strong> one integer per client and the cheapest possible check, but up to twice the limit can pass around a bucket boundary.</p>
+</section>
+
+<section id="log">
+  <h2><span class="num">2</span>Sliding window log</h2>
+  <p>Keep a log of every allowed request's timestamp in a per-client sorted set. The score is the request time in milliseconds; the member is a unique request ID. On each request: delete entries older than the window, count what remains, and add the new request only if the count is under the limit.</p>
+  <p>Those steps read, decide, then write, so they must run atomically. Otherwise two app servers could both read a count of 99 with a limit of 100 and both allow. A Lua script solves this: Redis runs a script to completion without interleaving any other command.</p>
+
+  <pre data-lang="lua">-- sliding_log.lua
+-- KEYS[1] = rate limit key
+-- ARGV[1] = now (ms), ARGV[2] = window (ms), ARGV[3] = limit, ARGV[4] = unique request id
+local key = KEYS[1]
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local limit = tonumber(ARGV[3])
+local member = ARGV[4]
+
+redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
+
+local count = redis.call('ZCARD', key)
+if count >= limit then
+    return 0
+end
+
+redis.call('ZADD', key, now, member)
+redis.call('PEXPIRE', key, window)
+return 1</pre>
+
+  <pre data-lang="python">import time
+import uuid
+import redis
+
+r = redis.Redis()
+
+with open("sliding_log.lua") as f:
+    SLIDING_LOG_LUA = f.read()
+
+sliding_log = r.register_script(SLIDING_LOG_LUA)
+
+def allow_sliding_log(client_id: str, limit: int, window_ms: int) -> bool:
+    now_ms = int(time.time() * 1000)
+    key = f"rl:log:{client_id}"
+    request_id = f"{now_ms}-{uuid.uuid4().hex}"
+
+    result = sliding_log(keys=[key], args=[now_ms, window_ms, limit, request_id])
+    return result == 1</pre>
+
+  <h3>What the set looks like, request by request</h3>
+  <p>All cards in this section use limit = 3 and window = 60,000 ms. Member suffixes are shortened to 4 hexadecimal characters for readability; the code above uses a full 32-character universally unique identifier (UUID).</p>
+
+  <figure class="card">
+    <figcaption>Card 1: One client after three requests</figcaption>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build: three allowed requests
+ZADD rl:log:user42 1758650400123 "1758650400123-9f2c"
+PEXPIRE rl:log:user42 60000
+ZADD rl:log:user42 1758650415456 "1758650415456-a71e"
+PEXPIRE rl:log:user42 60000
+ZADD rl:log:user42 1758650431789 "1758650431789-03bd"
+PEXPIRE rl:log:user42 60000
+
+# Read (at t=1758650431789)
+> TYPE rl:log:user42
+zset
+> ZRANGE rl:log:user42 0 -1 WITHSCORES
+1) "1758650400123-9f2c"
+2) "1758650400123"
+3) "1758650415456-a71e"
+4) "1758650415456"
+5) "1758650431789-03bd"
+6) "1758650431789"
+> ZCARD rl:log:user42
+(integer) 3
+> PTTL rl:log:user42
+(integer) 60000</pre>
+      <div class="table-wrap"><table class="struct">
+        <caption>rl:log:user42 (TTL 60000 ms)</caption>
+        <tr><th>score</th><th>member</th></tr>
+        <tr><td>1758650400123</td><td>"1758650400123-9f2c"</td></tr>
+        <tr><td>1758650415456</td><td>"1758650415456-a71e"</td></tr>
+        <tr><td>1758650431789</td><td>"1758650431789-03bd"</td></tr>
+      </table></div>
+    </div>
+  </figure>
+
+  <figure class="card">
+    <figcaption>Card 2: Trim, then allow</figcaption>
+    <p class="sub">New request at t = 1758650470000. Cutoff = 1758650470000 − 60000 = 1758650410000.</p>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build: script run for the new request
+> ZREMRANGEBYSCORE rl:log:user42 0 1758650410000
+(integer) 1                 # removed "1758650400123-9f2c"
+> ZCARD rl:log:user42
+(integer) 2                 # 2 &lt; 3, allowed
+> ZADD rl:log:user42 1758650470000 "1758650470000-5c88"
+(integer) 1
+> PEXPIRE rl:log:user42 60000
+(integer) 1
+
+# Read
+> ZRANGE rl:log:user42 0 -1 WITHSCORES
+1) "1758650415456-a71e"
+2) "1758650415456"
+3) "1758650431789-03bd"
+4) "1758650431789"
+5) "1758650470000-5c88"
+6) "1758650470000"
+> ZCARD rl:log:user42
+(integer) 3</pre>
+      <div class="table-wrap"><table class="struct">
+        <caption>rl:log:user42 (TTL 60000 ms)</caption>
+        <tr><th>score</th><th>member</th></tr>
+        <tr class="gone"><td>1758650400123</td><td>"1758650400123-9f2c"</td></tr>
+        <tr><td>1758650415456</td><td>"1758650415456-a71e"</td></tr>
+        <tr><td>1758650431789</td><td>"1758650431789-03bd"</td></tr>
+        <tr class="new"><td>1758650470000</td><td>"1758650470000-5c88"</td></tr>
+      </table></div>
+    </div>
+  </figure>
+
+  <figure class="card">
+    <figcaption>Card 3: Blocked, and when to retry</figcaption>
+    <p class="sub">New request at t = 1758650472000. Cutoff = 1758650472000 − 60000 = 1758650412000. The oldest score, 1758650415456, is above the cutoff, so nothing is trimmed.</p>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build: script run for the new request
+> ZREMRANGEBYSCORE rl:log:user42 0 1758650412000
+(integer) 0
+> ZCARD rl:log:user42
+(integer) 3                 # 3 >= 3, rejected
+                            # script returns 0, no ZADD
+
+# Read: oldest entry decides the retry time
+> ZRANGE rl:log:user42 0 0 WITHSCORES
+1) "1758650415456-a71e"
+2) "1758650415456"</pre>
+      <div>
+        <div class="table-wrap"><table class="struct">
+          <caption>rl:log:user42 (unchanged)</caption>
+          <tr><th>score</th><th>member</th></tr>
+          <tr><td>1758650415456</td><td>"1758650415456-a71e"</td></tr>
+          <tr><td>1758650431789</td><td>"1758650431789-03bd"</td></tr>
+          <tr><td>1758650470000</td><td>"1758650470000-5c88"</td></tr>
+        </table></div>
+        <p class="sub">Retry in = oldest score + window − now = 1758650415456 + 60000 − 1758650472000 = <strong>3456 ms</strong>. Send <code>Retry-After: 4</code> (seconds, rounded up).</p>
+      </div>
+    </div>
+  </figure>
+
+  <figure class="card">
+    <figcaption>Card 4: Multiple clients side by side</figcaption>
+    <p class="sub">Each client has its own key. They share nothing except the prefix.</p>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build
+ZADD rl:log:user7 1758650468210 "1758650468210-e41a"
+ZADD rl:log:203.0.113.9 1758650469900 "1758650469900-7b02"
+
+# Read (SCAN, never KEYS, in production)
+> SCAN 0 MATCH rl:log:* COUNT 100
+1) "0"
+2) 1) "rl:log:user42"
+   2) "rl:log:user7"
+   3) "rl:log:203.0.113.9"
+> ZCARD rl:log:user42
+(integer) 3
+> ZCARD rl:log:user7
+(integer) 1
+> ZCARD rl:log:203.0.113.9
+(integer) 1</pre>
+      <div class="table-wrap"><table class="struct">
+        <tr><th>key</th><th>members</th></tr>
+        <tr><td>rl:log:user42</td><td>3 (from Card 2)</td></tr>
+        <tr><td>rl:log:user7</td><td>1</td></tr>
+        <tr><td>rl:log:203.0.113.9</td><td>1 (keyed by IP address)</td></tr>
+      </table></div>
+    </div>
+  </figure>
+
+  <figure class="card">
+    <figcaption>Card 5: Why members must be unique</figcaption>
+    <p class="sub">Two requests arrive in the same millisecond. With the timestamp alone as the member, the second <code>ZADD</code> updates the first entry instead of adding one.</p>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build: timestamp-only members (wrong)
+> ZADD rl:log:user99 1758650480000 "1758650480000"
+(integer) 1                 # added
+> ZADD rl:log:user99 1758650480000 "1758650480000"
+(integer) 0                 # same member, nothing added
+
+# Read
+> ZCARD rl:log:user99
+(integer) 1                 # two requests counted as one
+
+# Build: timestamp plus random suffix (correct)
+> ZADD rl:log:user100 1758650480000 "1758650480000-2d9a"
+(integer) 1
+> ZADD rl:log:user100 1758650480000 "1758650480000-c613"
+(integer) 1
+
+# Read
+> ZCARD rl:log:user100
+(integer) 2                 # both counted</pre>
+      <div>
+        <div class="table-wrap"><table class="struct">
+          <caption>rl:log:user99</caption>
+          <tr><th>score</th><th>member</th></tr>
+          <tr><td>1758650480000</td><td>"1758650480000"</td></tr>
+        </table></div>
+        <div class="table-wrap"><table class="struct">
+          <caption>rl:log:user100</caption>
+          <tr><th>score</th><th>member</th></tr>
+          <tr><td>1758650480000</td><td>"1758650480000-2d9a"</td></tr>
+          <tr><td>1758650480000</td><td>"1758650480000-c613"</td></tr>
+        </table></div>
+      </div>
+    </div>
+  </figure>
+
+  <h3>What goes in the member</h3>
+  <p>Anything, as long as it is unique within that client's set while it is inside the window. The limiter only uses the scores (to trim by time) and the count (<code>ZCARD</code>); it never reads the member's content. The timestamp prefix in the examples is redundant with the score and exists only to make the set readable when you inspect it.</p>
+  <p>A duplicate causes an undercount, which lets the client exceed the limit. It only matters when the same member string lands in the same client's set while the earlier copy is still stored. A rare collision lets one extra request through. A constant member such as <code>"request"</code> keeps the set at one member forever, so the client is never limited at all.</p>
+
+  <figure class="card">
+    <figcaption>Three valid member choices</figcaption>
+    <pre data-lang="redis"># Random UUID: what the code uses
+ZADD rl:log:user42 1758650400123 "9f2c41d07ab84e1f9c3b2a6d58e0f7c1"
+
+# Per-client counter: shorter, guaranteed unique, costs one extra key and command
+> INCR rl:seq:user42
+(integer) 57
+ZADD rl:log:user42 1758650400123 "57"
+
+# Existing request or trace ID: shows which requests used the quota
+ZADD rl:log:user42 1758650400123 "req_8Hk2Lp0Qz"</pre>
+  </figure>
+  <p>Member length costs memory, since every member is stored for up to one window. With a high limit like 10,000 requests per hour per client, a short counter saves real space over a 32-character UUID.</p>
+
+  <h3>Two cleanup mechanisms, two jobs</h3>
+  <p><code>ZCARD</code> counts every member currently stored. It has no concept of age. Old requests stop counting only because <code>ZREMRANGEBYSCORE</code> deleted them one line earlier. <code>PEXPIRE</code> is separate: it deletes the whole key if the client goes quiet for a full window, which is purely memory cleanup.</p>
+  <div class="table-wrap"><table>
+    <tr><th>Command</th><th>What it removes</th><th>When</th></tr>
+    <tr><td class="mono">ZREMRANGEBYSCORE key 0 &lt;now − window&gt;</td><td>Individual old timestamps inside the set</td><td>Every call, right before <code>ZCARD</code></td></tr>
+    <tr><td class="mono">PEXPIRE key &lt;window&gt;</td><td>The entire set</td><td>Only if no request arrives for a full window</td></tr>
+  </table></div>
+  <p>Resetting the TTL to the full window on every allowed request is correct here: the request just added is the newest member and stays relevant for exactly one window. Once that passes, every member is outside the window and the set would count as 0 anyway.</p>
+
+  <figure class="card">
+    <figcaption>Walkthrough of both mechanisms</figcaption>
+    <p class="sub">Window 60,000 ms, limit 3. Timestamps shortened to small numbers.</p>
+    <pre data-lang="redis"># t=1000
+> ZREMRANGEBYSCORE key 0 -59000
+(integer) 0
+> ZCARD key
+(integer) 0
+> ZADD key 1000 "r1"
+(integer) 1
+> PEXPIRE key 60000           # whole key dies at t=61000 if untouched
+(integer) 1
+
+# t=5000
+> ZREMRANGEBYSCORE key 0 -55000
+(integer) 0
+> ZCARD key
+(integer) 1
+> ZADD key 5000 "r2"
+(integer) 1
+> PEXPIRE key 60000           # deadline moves to t=65000
+(integer) 1
+
+# t=62000: key still alive (deadline 65000), but "r1" is trimmed
+> ZREMRANGEBYSCORE key 0 2000
+(integer) 1                   # removed "r1" (score 1000)
+> ZCARD key
+(integer) 1                   # "r2" only
+> ZADD key 62000 "r3"
+(integer) 1
+> PEXPIRE key 60000           # deadline moves to t=122000
+(integer) 1
+
+# Read
+> ZRANGE key 0 -1 WITHSCORES
+1) "r2"
+2) "5000"
+3) "r3"
+4) "62000"</pre>
+    <p class="sub">Had the client gone silent after t=5000 and returned at t=70000, the key would have been deleted at t=65000. <code>ZCARD</code> on a missing key returns 0, so the client starts fresh.</p>
+  </figure>
+
+  <p><strong>Tradeoff:</strong> exact, with no boundary burst. Memory is O(limit) per client, which gets expensive for high limits.</p>
+</section>
+
+<section id="counter">
+  <h2><span class="num">3</span>Sliding window counter</h2>
+  <p>A middle ground between the first two. Keep fixed window counters as in algorithm 1, but estimate a sliding window by blending the previous bucket with the current one. The further you are into the current bucket, the less the previous bucket counts:</p>
+  <pre data-lang="python">estimated = prev_count * (window - elapsed_in_current) / window + curr_count</pre>
+  <p>Two integers per client, and the boundary burst mostly disappears. The estimate assumes the previous bucket's requests were spread evenly across it, so it is approximate.</p>
+
+  <pre data-lang="lua">-- sliding_counter.lua
+-- KEYS[1] = current bucket key, KEYS[2] = previous bucket key
+-- ARGV[1] = now (ms), ARGV[2] = window (ms), ARGV[3] = limit
+local now = tonumber(ARGV[1])
+local window = tonumber(ARGV[2])
+local limit = tonumber(ARGV[3])
+
+local curr = tonumber(redis.call('GET', KEYS[1]) or '0')
+local prev = tonumber(redis.call('GET', KEYS[2]) or '0')
+
+local elapsed = now % window
+local weight = (window - elapsed) / window
+local estimated = prev * weight + curr
+
+if estimated >= limit then
+    return 0
+end
+
+redis.call('INCR', KEYS[1])
+redis.call('PEXPIRE', KEYS[1], window * 2)   -- still needed as "previous" during the next window
+return 1</pre>
+
+  <pre data-lang="python">with open("sliding_counter.lua") as f:
+    SLIDING_COUNTER_LUA = f.read()
+
+sliding_counter = r.register_script(SLIDING_COUNTER_LUA)
+
+def allow_sliding_counter(client_id: str, limit: int, window_ms: int) -> bool:
+    now_ms = int(time.time() * 1000)
+    bucket = now_ms // window_ms
+    curr_key = f"rl:sw:{{{client_id}}}:{bucket}"        # braces form a hash tag, see Production details
+    prev_key = f"rl:sw:{{{client_id}}}:{bucket - 1}"
+
+    result = sliding_counter(keys=[curr_key, prev_key], args=[now_ms, window_ms, limit])
+    return result == 1</pre>
+
+  <figure class="card">
+    <figcaption>Rejected 15 seconds into a bucket</figcaption>
+    <p class="sub">Limit 10 per 60,000 ms. Now = 1758650415000, so bucket = 1758650415000 // 60000 = 29310840, which started at 29310840 × 60000 = 1758650400000. Elapsed = 15000 ms, weight = (60000 − 15000) / 60000 = 0.75.</p>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build: state left by earlier requests
+SET rl:sw:{user42}:29310839 8
+SET rl:sw:{user42}:29310840 4
+
+# Read: what the script sees
+> GET rl:sw:{user42}:29310839
+"8"
+> GET rl:sw:{user42}:29310840
+"4"
+
+# estimated = 8 * 0.75 + 4 = 10
+# 10 >= 10, rejected, no INCR</pre>
+      <div class="table-wrap"><table class="struct">
+        <tr><th>key</th><th>value</th><th>role</th></tr>
+        <tr><td>rl:sw:{user42}:29310839</td><td>"8"</td><td>previous</td></tr>
+        <tr><td>rl:sw:{user42}:29310840</td><td>"4"</td><td>current</td></tr>
+      </table></div>
+    </div>
+  </figure>
+
+  <figure class="card">
+    <figcaption>Allowed 30 seconds into the same bucket</figcaption>
+    <p class="sub">Same state. Now = 1758650430000, elapsed = 30000 ms, weight = (60000 − 30000) / 60000 = 0.5.</p>
+    <div class="card-cols">
+      <pre data-lang="redis"># Read: what the script sees
+> GET rl:sw:{user42}:29310839
+"8"
+> GET rl:sw:{user42}:29310840
+"4"
+
+# estimated = 8 * 0.5 + 4 = 8
+# 8 &lt; 10, allowed
+
+# Build: script writes
+> INCR rl:sw:{user42}:29310840
+(integer) 5
+> PEXPIRE rl:sw:{user42}:29310840 120000
+(integer) 1</pre>
+      <div class="table-wrap"><table class="struct">
+        <tr><th>key</th><th>value</th><th>role</th></tr>
+        <tr><td>rl:sw:{user42}:29310839</td><td>"8"</td><td>previous</td></tr>
+        <tr class="new"><td>rl:sw:{user42}:29310840</td><td>"5"</td><td>current</td></tr>
+      </table></div>
+    </div>
+  </figure>
+
+  <p><strong>Tradeoff:</strong> constant memory like the fixed window, accuracy close to the log. A good default when limits are high.</p>
+</section>
+
+<section id="bucket">
+  <h2><span class="num">4</span>Token bucket</h2>
+  <p>Each client has a bucket holding up to <code>capacity</code> tokens that refills at a steady rate. Each request spends tokens (usually 1). Short bursts up to <code>capacity</code> are allowed, while the long-run average is held to the refill rate. State is a hash with two fields, <code>tokens</code> and <code>ts</code> (the time of the last update), and refilling is computed lazily from the elapsed time on each request, so no background job is needed.</p>
+
+  <pre data-lang="lua">-- token_bucket.lua
+-- KEYS[1] = bucket key
+-- ARGV[1] = capacity, ARGV[2] = refill rate (tokens per second), ARGV[3] = cost of this request
+local key = KEYS[1]
+local capacity = tonumber(ARGV[1])
+local rate = tonumber(ARGV[2])
+local cost = tonumber(ARGV[3])
+
+local t = redis.call('TIME')   -- server clock, so app servers with skewed clocks agree
+local now = tonumber(t[1]) * 1000 + math.floor(tonumber(t[2]) / 1000)
+
+local state = redis.call('HMGET', key, 'tokens', 'ts')
+local tokens = tonumber(state[1])
+local ts = tonumber(state[2])
+if tokens == nil then
+    tokens = capacity
+    ts = now
+end
+
+local elapsed = math.max(0, now - ts)
+local refilled = tokens + elapsed * rate / 1000
+tokens = math.min(capacity, refilled)
+
+local allowed = 0
+if tokens >= cost then
+    tokens = tokens - cost
+    allowed = 1
+end
+
+redis.call('HSET', key, 'tokens', tokens, 'ts', now)
+local full_refill_ms = math.ceil(capacity / rate * 1000)
+redis.call('PEXPIRE', key, full_refill_ms)   -- an idle bucket is full again by then, so deleting it loses nothing
+return {allowed, tostring(tokens)}           -- Lua numbers returned to Redis are truncated to integers</pre>
+
+  <p>Calling <code>TIME</code> inside a script works as written on Redis 7 and later. On Redis 5 and 6, add <code>redis.replicate_commands()</code> as the first line.</p>
+
+  <pre data-lang="python">with open("token_bucket.lua") as f:
+    TOKEN_BUCKET_LUA = f.read()
+
+token_bucket = r.register_script(TOKEN_BUCKET_LUA)
+
+def allow_token_bucket(client_id: str, capacity: int, per_second: float, cost: int = 1) -> tuple[bool, float]:
+    key = f"rl:tb:{client_id}"
+
+    result = token_bucket(keys=[key], args=[capacity, per_second, cost])
+
+    allowed = result[0] == 1
+    remaining = float(result[1])
+    return allowed, remaining</pre>
+
+  <figure class="card">
+    <figcaption>Refill, then spend</figcaption>
+    <p class="sub">Capacity 5, refill 1 token per second, cost 1. Stored state: 2 tokens at ts = 1758650400000. Request at server time 1758650401500: elapsed = 1500 ms, refilled = 2 + 1500 × 1 / 1000 = 3.5, capped at min(5, 3.5) = 3.5. 3.5 ≥ 1, so allowed, leaving 2.5. Full refill time = ceil(5 / 1 × 1000) = 5000 ms.</p>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build: prior state
+HSET rl:tb:user42 tokens 2 ts 1758650400000
+
+# Build: script writes for the request
+> HSET rl:tb:user42 tokens 2.5 ts 1758650401500
+(integer) 0                 # fields existed, updated
+> PEXPIRE rl:tb:user42 5000
+(integer) 1
+
+# Read
+> HGETALL rl:tb:user42
+1) "tokens"
+2) "2.5"
+3) "ts"
+4) "1758650401500"
+> PTTL rl:tb:user42
+(integer) 5000</pre>
+      <div class="table-wrap"><table class="struct">
+        <caption>rl:tb:user42 (hash, TTL 5000 ms)</caption>
+        <tr><th>field</th><th>value</th></tr>
+        <tr><td>tokens</td><td>"2.5"</td></tr>
+        <tr><td>ts</td><td>"1758650401500"</td></tr>
+      </table></div>
+    </div>
+  </figure>
+
+  <figure class="card">
+    <figcaption>A burst drains the bucket</figcaption>
+    <p class="sub">Starting from the previous card. Four requests at server time 1758650402000.</p>
+    <div class="table-wrap"><table>
+      <tr><th>Request</th><th>Elapsed</th><th>Refilled</th><th>Decision</th><th>Tokens after</th></tr>
+      <tr><td>A</td><td>500 ms</td><td>2.5 + 0.5 = 3.0</td><td>allowed</td><td>2</td></tr>
+      <tr><td>B</td><td>0 ms</td><td>2 + 0 = 2</td><td>allowed</td><td>1</td></tr>
+      <tr><td>C</td><td>0 ms</td><td>1 + 0 = 1</td><td>allowed</td><td>0</td></tr>
+      <tr><td>D</td><td>0 ms</td><td>0 + 0 = 0</td><td>rejected (0 &lt; 1)</td><td>0</td></tr>
+    </table></div>
+    <div class="card-cols">
+      <pre data-lang="redis"># Build: script writes, one HSET + PEXPIRE per request
+HSET rl:tb:user42 tokens 2 ts 1758650402000    # A
+PEXPIRE rl:tb:user42 5000
+HSET rl:tb:user42 tokens 1 ts 1758650402000    # B
+PEXPIRE rl:tb:user42 5000
+HSET rl:tb:user42 tokens 0 ts 1758650402000    # C
+PEXPIRE rl:tb:user42 5000
+HSET rl:tb:user42 tokens 0 ts 1758650402000    # D, rejected, state still saved
+PEXPIRE rl:tb:user42 5000
+
+# Read
+> HGETALL rl:tb:user42
+1) "tokens"
+2) "0"
+3) "ts"
+4) "1758650402000"</pre>
+      <div>
+        <div class="table-wrap"><table class="struct">
+          <caption>rl:tb:user42 (hash, TTL 5000 ms)</caption>
+          <tr><th>field</th><th>value</th></tr>
+          <tr><td>tokens</td><td>"0"</td></tr>
+          <tr><td>ts</td><td>"1758650402000"</td></tr>
+        </table></div>
+        <p class="sub">Retry in = (cost − tokens) / rate = (1 − 0) / 1 = 1 s.</p>
+      </div>
+    </div>
+  </figure>
+
+  <p><strong>Tradeoff:</strong> two fields per client, burst-friendly, and supports weighted requests through <code>cost</code> (an expensive endpoint can cost 5 tokens). This is what most production API gateways use.</p>
+</section>
+
+<section id="compare">
+  <h2>Which to pick</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Algorithm</th><th>Redis structure</th><th>Memory per client</th><th>Accuracy</th><th>Bursts</th></tr>
+    <tr><td>Fixed window</td><td>String counter per bucket</td><td>1 integer</td><td>Up to 2× at bucket boundaries</td><td>Uncontrolled at edges</td></tr>
+    <tr><td>Sliding window log</td><td>Sorted set of timestamps</td><td>O(limit)</td><td>Exact</td><td>None beyond the limit</td></tr>
+    <tr><td>Sliding window counter</td><td>Two string counters</td><td>2 integers</td><td>Close approximation</td><td>Mostly smoothed</td></tr>
+    <tr><td>Token bucket</td><td>Hash with 2 fields</td><td>2 fields</td><td>Exact average rate</td><td>Allowed up to capacity</td></tr>
+  </table></div>
+</section>
+
+<section id="wire">
+  <h2>Wiring it into an app</h2>
+  <p>Call the check <strong>once per incoming request, before any real work</strong>. It is a gate at the front of the request handler:</p>
+  <pre data-lang="python"># request arrives
+#   -> figure out client_id (user ID, API key, or IP address)
+#   -> allow_sliding_log(client_id, limit, window_ms)
+#        False -> return HTTP 429, stop
+#        True  -> run the actual handler</pre>
+  <p>Middleware covers every endpoint without repeating the check. With FastAPI:</p>
+  <pre data-lang="python">from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+
+app = FastAPI()
+
+LIMIT = 100          # requests
+WINDOW_MS = 60_000   # per 60 seconds
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    api_key = request.headers.get("X-API-Key")
+    if api_key is not None:
+        client_id = api_key
+    else:
+        client_id = request.client.host  # fall back to IP address
+
+    allowed = allow_sliding_log(client_id, LIMIT, WINDOW_MS)
+    if not allowed:
+        return JSONResponse(
+            status_code=429,
+            content={"error": "rate limit exceeded"},
+            headers={"Retry-After": "60"},
+        )
+
+    response = await call_next(request)
+    return response</pre>
+  <ul>
+    <li><strong>No background cleanup job.</strong> Each call trims its own old entries, and TTLs delete keys for idle clients.</li>
+    <li><strong>Rejected requests are not recorded</strong> in the sliding window log. The script returns before <code>ZADD</code>, so hammering while blocked does not extend the lockout. To make blocked attempts count against abusive clients, move the <code>ZADD</code> above the limit check.</li>
+    <li><strong>Check before expensive work.</strong> The point is to avoid spending database queries or compute on requests you will reject.</li>
+    <li><strong>Precise <code>Retry-After</code>.</strong> The example sends the full window. For an exact value, read the oldest entry and compute oldest score + window − now, as in Card 3.</li>
+    <li><strong>Different limits per route</strong> means different keys, such as <code>rl:log:user42:search</code> and <code>rl:log:user42:upload</code>, each checked in its own handler.</li>
+  </ul>
+</section>
+
+<section id="prod">
+  <h2>Production details</h2>
+  <dl class="facts">
+    <dt>Atomicity</dt>
+    <dd>Never read, check, and write as separate round trips from the app. Use <code>INCR</code>, <code>MULTI</code>/<code>EXEC</code> transactions, or a Lua script.</dd>
+    <dt>Redis Cluster hash tags</dt>
+    <dd>In Redis Cluster, every key a script touches must live in the same hash slot. Scripts with one key are always fine. For two keys, wrap the shared part in braces, such as <code>rl:sw:{user42}:29310840</code> and <code>rl:sw:{user42}:29310839</code>; Redis hashes only the text inside the braces, so both land in the same slot.</dd>
+    <dt>Failure mode</dt>
+    <dd>Decide what happens when Redis is unreachable: fail open (allow requests, favoring availability) or fail closed (reject, favoring protection). Put a short timeout on the Redis call either way.</dd>
+    <dt>Response headers</dt>
+    <dd>Return <code>Retry-After</code> and <code>X-RateLimit-Remaining</code> so clients can back off correctly. The token bucket script already returns the remaining tokens.</dd>
+    <dt>Script loading</dt>
+    <dd><code>SCRIPT LOAD</code> caches a script and returns its Secure Hash Algorithm 1 (SHA-1) digest; <code>EVALSHA</code> then runs it by digest instead of resending the body. The <code>register_script</code> helper in redis-py does this automatically and reloads the script if Redis replies <code>NOSCRIPT</code>.</dd>
+    <dt>Hot keys</dt>
+    <dd>One very high-traffic client concentrates load on one Redis shard. For global limits (not per client), consider a local in-process limiter in front of Redis that syncs in batches.</dd>
+  </dl>
+</section>
+
+<section id="ref">
+  <h2>Command reference</h2>
+  <div class="table-wrap"><table>
+    <tr><th>Command</th><th>Does</th><th>On a missing key</th><th>Cost</th></tr>
+    <tr><td class="mono">INCR key</td><td>Adds 1, returns the new value</td><td>Treats it as 0, returns 1</td><td>O(1)</td></tr>
+    <tr><td class="mono">GET key</td><td>Reads a string value</td><td>Returns nil</td><td>O(1)</td></tr>
+    <tr><td class="mono">EXPIRE key sec [NX]</td><td>Sets a relative TTL in seconds</td><td>Returns 0</td><td>O(1)</td></tr>
+    <tr><td class="mono">PEXPIRE key ms</td><td>Sets a relative TTL in milliseconds</td><td>Returns 0</td><td>O(1)</td></tr>
+    <tr><td class="mono">PEXPIREAT key unix-ms</td><td>Sets an absolute deadline</td><td>Returns 0</td><td>O(1)</td></tr>
+    <tr><td class="mono">PTTL key</td><td>Remaining TTL in milliseconds</td><td>Returns −2 (−1 means no TTL)</td><td>O(1)</td></tr>
+    <tr><td class="mono">ZADD key score member</td><td>Adds a member or updates its score</td><td>Creates the set</td><td>O(log N)</td></tr>
+    <tr><td class="mono">ZCARD key</td><td>Number of members</td><td>Returns 0</td><td>O(1)</td></tr>
+    <tr><td class="mono">ZREMRANGEBYSCORE key min max</td><td>Deletes members with score in [min, max]</td><td>Returns 0</td><td>O(log N + M removed)</td></tr>
+    <tr><td class="mono">ZRANGE key start stop WITHSCORES</td><td>Reads members by position, lowest score first</td><td>Returns an empty list</td><td>O(log N + M returned)</td></tr>
+    <tr><td class="mono">HSET key field value ...</td><td>Sets hash fields</td><td>Creates the hash</td><td>O(1) per field</td></tr>
+    <tr><td class="mono">HMGET key field ...</td><td>Reads hash fields</td><td>Returns nils</td><td>O(1) per field</td></tr>
+    <tr><td class="mono">TIME</td><td>Server time as [seconds, microseconds]</td><td>Not applicable</td><td>O(1)</td></tr>
+    <tr><td class="mono">EVALSHA sha numkeys ...</td><td>Runs a cached Lua script</td><td>NOSCRIPT error if not loaded</td><td>Script's own cost</td></tr>
+  </table></div>
+
+  <footer>Written by Yel Gabo.</footer>
+</section>
+</main>
+</div>
+
+<script>
+(function () {
+  /* ---------- Theme toggle ---------- */
+  var root = document.documentElement;
+  var themeBtn = document.getElementById("themeBtn");
+
+  function systemPrefersDark() {
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function currentIsDark() {
+    var set = root.getAttribute("data-theme");
+    if (set === "dark") return true;
+    if (set === "light") return false;
+    return systemPrefersDark();
+  }
+  function syncThemeLabel() {
+    themeBtn.textContent = currentIsDark() ? "Light mode" : "Dark mode";
+  }
+  try {
+    var saved = localStorage.getItem("rl-theme");
+    if (saved === "dark" || saved === "light") root.setAttribute("data-theme", saved);
+  } catch (e) {}
+  syncThemeLabel();
+  themeBtn.addEventListener("click", function () {
+    var next = currentIsDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("rl-theme", next); } catch (e) {}
+    syncThemeLabel();
+  });
+
+  /* ---------- Syntax highlighting ---------- */
+  var KEYWORDS = {
+    python: ["def", "return", "if", "else", "import", "from", "as", "await", "async", "not", "is", "None", "True", "False", "with", "for", "in"],
+    lua: ["local", "if", "then", "end", "return", "nil", "and", "or", "not", "else", "elseif", "function"]
+  };
+  function escapeHtml(s) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  function buildRegex(lang) {
+    var parts = [];
+    if (lang === "lua") parts.push("(--.*)");
+    else parts.push("(#.*)");
+    parts.push("(\"(?:[^\"\\\\\\n]|\\\\.)*\"|'(?:[^'\\\\\\n]|\\\\.)*')");
+    if (lang === "redis") {
+      parts.push("(^> )");
+      parts.push("(^\\s*(?:\\(integer\\)|\\d+\\)).*$|^(?:zset|OK)$)");
+      parts.push("(\\b[A-Z][A-Z]+\\b)");
+    } else {
+      parts.push("(^> )");
+      parts.push("(?!)");
+      parts.push("(\\b(?:" + KEYWORDS[lang].join("|") + ")\\b)");
+    }
+    parts.push("(\\b\\d+(?:\\.\\d+)?\\b)");
+    return new RegExp(parts.join("|"), "gm");
+  }
+  var CLASSES = ["tk-com", "tk-str", "tk-prompt", "tk-out", "tk-kw", "tk-num"];
+  function highlight(text, lang) {
+    if (!lang) return escapeHtml(text);
+    var re = buildRegex(lang);
+    var out = "";
+    var last = 0;
+    var m;
+    while ((m = re.exec(text)) !== null) {
+      if (m[0].length === 0) { re.lastIndex++; continue; }
+      out += escapeHtml(text.slice(last, m.index));
+      var cls = "";
+      for (var i = 1; i <= 6; i++) {
+        if (m[i] !== undefined) { cls = CLASSES[i - 1]; break; }
+      }
+      out += '<span class="' + cls + '">' + escapeHtml(m[0]) + "</span>";
+      last = m.index + m[0].length;
+    }
+    out += escapeHtml(text.slice(last));
+    return out;
+  }
+  var blocks = document.querySelectorAll("pre[data-lang]");
+  for (var b = 0; b < blocks.length; b++) {
+    var pre = blocks[b];
+    pre.innerHTML = highlight(pre.textContent, pre.getAttribute("data-lang"));
+  }
+
+  /* ---------- Sliding window log simulator ---------- */
+  var WINDOW = 10000;
+  var LIMIT = 3;
+  var SPAN = 15000;
+  var KEY = "rl:log:demo";
+
+  var members = [];      // [{score, member}] sorted by score
+  var expireAt = null;   // absolute ms when the whole key is deleted
+
+  var track = document.getElementById("track");
+  var statusEl = document.getElementById("status");
+  var setView = document.getElementById("setView");
+  var cmdView = document.getElementById("cmdView");
+
+  function randomHex(n) {
+    var s = "";
+    for (var i = 0; i < n; i++) s += Math.floor(Math.random() * 16).toString(16);
+    return s;
+  }
+  function applyKeyExpiry(now) {
+    if (expireAt !== null && now >= expireAt) {
+      members = [];
+      expireAt = null;
+      return true;
+    }
+    return false;
+  }
+  function pad(s, n) {
+    while (s.length < n) s += " ";
+    return s;
+  }
+
+  function sendRequest() {
+    var now = Date.now();
+    var lines = [];
+    var expired = applyKeyExpiry(now);
+    if (expired) lines.push("# key had expired (no requests for " + WINDOW + " ms), so it starts empty");
+
+    var cutoff = now - WINDOW;
+    var kept = [];
+    var removed = 0;
+    for (var i = 0; i < members.length; i++) {
+      if (members[i].score <= cutoff) removed++;
+      else kept.push(members[i]);
+    }
+    members = kept;
+
+    lines.push("# now = " + now + ", cutoff = " + now + " - " + WINDOW + " = " + cutoff);
+    lines.push("> ZREMRANGEBYSCORE " + KEY + " 0 " + cutoff);
+    lines.push("(integer) " + removed);
+    lines.push("> ZCARD " + KEY);
+    var count = members.length;
+    lines.push("(integer) " + count);
+
+    if (count >= LIMIT) {
+      var retry = members[0].score + WINDOW - now;
+      lines.push("# " + count + " >= " + LIMIT + ", rejected, script returns 0");
+      lines.push("# retry in " + members[0].score + " + " + WINDOW + " - " + now + " = " + retry + " ms");
+      statusEl.className = "status no";
+      statusEl.textContent = "Rejected with HTTP 429. " + count + " requests already in the window. Retry in " + retry + " ms.";
+    } else {
+      var member = now + "-" + randomHex(4);
+      members.push({ score: now, member: member });
+      expireAt = now + WINDOW;
+      lines.push("# " + count + " < " + LIMIT + ", allowed");
+      lines.push("> ZADD " + KEY + " " + now + " \"" + member + "\"");
+      lines.push("(integer) 1");
+      lines.push("> PEXPIRE " + KEY + " " + WINDOW);
+      lines.push("(integer) 1");
+      statusEl.className = "status ok";
+      statusEl.textContent = "Allowed. " + (count + 1) + " of " + LIMIT + " requests now in the window.";
+    }
+    cmdView.innerHTML = highlight(lines.join("\n"), "redis");
+    render();
+  }
+
+  function resetSim() {
+    members = [];
+    expireAt = null;
+    statusEl.className = "status";
+    statusEl.textContent = "No requests yet. The key does not exist.";
+    cmdView.innerHTML = "";
+    render();
+  }
+
+  function render() {
+    var now = Date.now();
+    if (applyKeyExpiry(now) && statusEl.className === "status") {
+      statusEl.textContent = "The key expired after " + WINDOW + " ms without requests.";
+    }
+
+    var dots = track.querySelectorAll(".dot");
+    for (var d = 0; d < dots.length; d++) dots[d].remove();
+    for (var i = 0; i < members.length; i++) {
+      var age = now - members[i].score;
+      if (age > SPAN) continue;
+      var dot = document.createElement("div");
+      dot.className = "dot" + (age >= WINDOW ? " stale" : "");
+      dot.style.left = (100 * (SPAN - age) / SPAN) + "%";
+      track.appendChild(dot);
+    }
+
+    if (members.length === 0) {
+      setView.innerHTML = highlight("> EXISTS " + KEY + "\n(integer) 0", "redis");
+      return;
+    }
+    var rows = [];
+    rows.push("> ZRANGE " + KEY + " 0 -1 WITHSCORES");
+    for (var j = 0; j < members.length; j++) {
+      rows.push((2 * j + 1) + ") \"" + members[j].member + "\"");
+      rows.push((2 * j + 2) + ") \"" + members[j].score + "\"");
+    }
+    rows.push("> PTTL " + KEY);
+    rows.push("(integer) " + Math.max(0, expireAt - now));
+    rows.push("");
+    for (var k = 0; k < members.length; k++) {
+      var a = now - members[k].score;
+      var state = a >= WINDOW ? "outside window, trimmed on next call" : "in window";
+      rows.push("# " + pad(members[k].member, 20) + " age " + a + " ms, " + state);
+    }
+    setView.innerHTML = highlight(rows.join("\n"), "redis");
+  }
+
+  document.getElementById("sendBtn").addEventListener("click", sendRequest);
+  document.getElementById("resetBtn").addEventListener("click", resetSim);
+  resetSim();
+  setInterval(render, 100);
+})();
+</script>
+</body>
+</html>

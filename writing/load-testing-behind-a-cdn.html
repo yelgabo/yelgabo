@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Load-testing behind a CDN</title>
+<meta name="description" content="Preparing a Next.js and Postgres site on Railway for a public launch: edge caching, a load test, a Postgres bottleneck, and the before and after numbers for each fix.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0a'/%3E%3Ctext x='50%25' y='55%25' text-anchor='middle' dominant-baseline='middle' font-family='-apple-system, BlinkMacSystemFont, Helvetica Neue, Arial, sans-serif' font-weight='800' font-size='30' fill='%23fafaf9' letter-spacing='-1'%3Eyg%3C/text%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F2F4F1;
+  --surface: #FFFFFF;
+  --ink: #18202C;
+  --muted: #566170;
+  --line: #D5DAD2;
+  --accent: #D99A00;
+  --accent-ink: #7D5600;
+  --good: #2E7D5B;
+  --bad: #B8322A;
+  --bar-before: #C9CFC6;
+  --code-bg: #19202B;
+  --code-ink: #DCE3EC;
+  --table-head: #E7EBE5;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131820;
+    --surface: #1B222C;
+    --ink: #DCE3EC;
+    --muted: #9AA6B5;
+    --line: #2C3542;
+    --accent: #F0B429;
+    --accent-ink: #F0B429;
+    --good: #5CC196;
+    --bad: #F07167;
+    --bar-before: #3A4452;
+    --code-bg: #0E1319;
+    --code-ink: #DCE3EC;
+    --table-head: #222A35;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #131820;
+  --surface: #1B222C;
+  --ink: #DCE3EC;
+  --muted: #9AA6B5;
+  --line: #2C3542;
+  --accent: #F0B429;
+  --accent-ink: #F0B429;
+  --good: #5CC196;
+  --bad: #F07167;
+  --bar-before: #3A4452;
+  --code-bg: #0E1319;
+  --code-ink: #DCE3EC;
+  --table-head: #222A35;
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+a { color: var(--accent-ink); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+code, pre { font-family: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace; }
+p code, li code, td code, figcaption code {
+  font-size: 0.88em;
+  background: var(--table-head);
+  padding: 0.08em 0.35em;
+  border-radius: 4px;
+}
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 18px 24px 0;
+}
+.topbar .site { font-weight: 700; color: var(--muted); text-decoration: none; }
+.theme-btn {
+  font: inherit;
+  font-size: 15px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 48px;
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 24px 96px;
+}
+nav.toc {
+  position: sticky;
+  top: 24px;
+  align-self: start;
+  padding-top: 40px;
+  font-size: 15px;
+}
+nav.toc ol { list-style: none; margin: 0; padding: 0; }
+nav.toc li { margin: 0 0 8px; }
+nav.toc a { color: var(--muted); text-decoration: none; }
+nav.toc a:hover { color: var(--ink); }
+main { min-width: 0; max-width: 880px; }
+.hero { padding: 40px 0 8px; }
+.kicker { color: var(--muted); font-size: 15px; margin: 0 0 10px; }
+.hero h1 {
+  font-size: clamp(38px, 6vw, 66px);
+  line-height: 1.04;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px;
+  max-width: 16ch;
+}
+.lede { font-size: 20px; color: var(--muted); max-width: 62ch; margin: 0 0 28px; }
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 8px 0 0;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+.stat .n { font-size: 28px; font-weight: 800; line-height: 1.1; margin: 0; }
+.stat .l { font-size: 14px; color: var(--muted); margin: 6px 0 0; }
+section { padding-top: 56px; }
+section > h2 {
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px;
+}
+section > h2 .num { color: var(--accent-ink); margin-right: 10px; }
+h3 { font-size: 20px; margin: 32px 0 8px; }
+p, ul, ol { max-width: 72ch; }
+li { margin-bottom: 6px; }
+.note {
+  border-left: 3px solid var(--accent);
+  padding: 4px 0 4px 16px;
+  margin: 20px 0;
+  max-width: 72ch;
+}
+pre {
+  background: var(--code-bg);
+  color: var(--code-ink);
+  border-radius: 10px;
+  padding: 16px 18px;
+  overflow-x: auto;
+  font-size: 14px;
+  line-height: 1.55;
+  margin: 14px 0 20px;
+}
+.tk-com { color: #7F8A99; font-style: italic; }
+.tk-kw { color: #C9A0F0; }
+.tk-str { color: #7CC9A0; }
+figure.card {
+  margin: 28px 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 18px 20px 14px;
+}
+figure.card figcaption { font-weight: 700; font-size: 18px; margin-bottom: 4px; }
+figure.card .sub { color: var(--muted); font-size: 15px; margin: 0 0 14px; max-width: none; }
+.table-wrap { overflow-x: auto; margin: 14px 0 20px; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--table-head); font-weight: 700; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.bars { display: grid; gap: 14px; }
+.bar-group h4 { font-size: 14px; font-weight: 700; margin: 0 0 6px; }
+.bar-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 64px;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.bar-row .label { color: var(--muted); }
+.bar-track { height: 14px; background: var(--table-head); border-radius: 4px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+.bar-fill.before { background: var(--bar-before); }
+.bar-row .val { text-align: right; font-variant-numeric: tabular-nums; }
+.flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0 6px;
+  font-size: 14px;
+}
+.flow div {
+  background: var(--table-head);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.flow strong { display: block; font-size: 15px; }
+footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--line); }
+@media (max-width: 980px) {
+  .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  nav.toc { position: static; padding-top: 24px; }
+  nav.toc ol { display: flex; flex-wrap: wrap; gap: 6px 16px; }
+  nav.toc li { margin: 0; }
+}
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .topbar, .layout { padding-left: 16px; padding-right: 16px; }
+  .stats, .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  figure.card { padding-left: 14px; padding-right: 14px; }
+  .bar-row { grid-template-columns: 96px minmax(0, 1fr) 56px; }
+  pre { font-size: 13px; padding: 14px; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="site" href="/">yelgabo</a>
+  <button class="theme-btn" id="themeBtn" type="button">Dark mode</button>
+</header>
+<div class="layout">
+<nav class="toc" aria-label="Contents">
+  <ol>
+    <li><a href="#context">The site and the goal</a></li>
+    <li><a href="#edge">1. Let the edge cache it</a></li>
+    <li><a href="#test">2. Load test</a></li>
+    <li><a href="#misses">3. The cache-miss path</a></li>
+    <li><a href="#indexes">4. Indexes</a></li>
+    <li><a href="#gotchas">What surprised me</a></li>
+    <li><a href="#redis">Why not Redis</a></li>
+    <li><a href="#method">Method and caveats</a></li>
+  </ol>
+</nav>
+<main>
+<div class="hero">
+  <p class="kicker">October 2026 &middot; Next.js, Postgres, Railway</p>
+  <h1>Load-testing behind a CDN</h1>
+  <p class="lede">Before announcing <a href="https://job-fraud-production.up.railway.app">job-fraud</a> publicly, I set a target of 1,000 requests a second and tested toward it. The cached pages held at the limit of my test machine. The uncached pages exposed a Postgres bottleneck, which two small changes cut from a 3.1-second 90th percentile to 587 ms.</p>
+  <div class="stats">
+    <div class="stat"><p class="n">470/s</p><p class="l">cached pages, 0 errors; my home connection was the limit</p></div>
+    <div class="stat"><p class="n">2.5%</p><p class="l">of one CPU core used by the app server during that run</p></div>
+    <div class="stat"><p class="n">3.1 s &rarr; 587 ms</p><p class="l">p90 for uncached pages at 100/s</p></div>
+    <div class="stat"><p class="n">4 &rarr; 0.7</p><p class="l">CPU cores Postgres used in the uncached test, before and after the first fix</p></div>
+  </div>
+</div>
+
+<section id="context">
+  <h2>The site and the goal</h2>
+  <p><a href="https://job-fraud-production.up.railway.app">job-fraud</a> reviews job postings from WorkBC, British Columbia's public job board, and rates each one Low, Medium or High on whether it looks like a genuine attempt to hire locally. It holds about 23,000 rated postings. The front end is Next.js 15 (App Router), the data lives in Postgres through Prisma, and everything runs on Railway, a hosting platform. Railway puts a CDN in front of each web service; I call it "the edge" below, and the Node server behind it "the origin".</p>
+  <p>The CPU figures in this post come from Railway's per-service metrics, which report CPU in vCPUs. One vCPU is one CPU core's worth of time, so 0.5 means half a core was busy on average.</p>
+  <p>A public launch sends a burst of people to the same few pages within minutes. I set the target at 1,000 requests a second on the public pages and treated it as a requirement. I didn't plan for the average traffic I expected afterwards.</p>
+  <p>The site had one constraint that shaped everything below. Railway's build step has no network route to the private database, so a page that queries Postgres cannot be rendered at build time. The list pages are therefore rendered on every request (<code>force-dynamic</code>) and keep their data in Next's data cache (<code>unstable_cache</code>, 10 minutes). That data cache protected Postgres, but the pages themselves were never cached at the edge.</p>
+</section>
+
+<section id="edge">
+  <h2><span class="num">1</span>Let the edge cache the pages</h2>
+  <p>Railway's edge caches whatever the origin marks cacheable. Next marks every dynamically rendered page <code>private</code>, so the edge passed every homepage request through to the Node server. Three changes fixed that.</p>
+  <h3>Mark the list pages cacheable</h3>
+  <p>A small middleware sets <code>Cache-Control: s-maxage=600, stale-while-revalidate</code> on <code>/</code> and <code>/companies</code>. The edge then serves those pages for 10 minutes and refreshes them in the background. Visitors never wait for that refresh.</p>
+  <h3>Make URLs canonical</h3>
+  <p>The edge's cache key includes the query string. A link shared on social media arrives as <code>/?fbclid=&hellip;</code>, a unique URL per click that would never hit the cache. The middleware rebuilds each URL in one fixed form, keeping only the parameters the page understands, in a fixed order and without defaults. It answers anything else with a 308 redirect to that canonical form. Every click from a share then lands on one of a few cached URLs.</p>
+<pre><span class="tk-com">// middleware.ts (trimmed)</span>
+<span class="tk-kw">const</span> canonical = canonicalUrl(url.pathname, url.searchParams)
+<span class="tk-kw">if</span> (canonical !== url.pathname + url.search) <span class="tk-kw">return</span> NextResponse.redirect(target, <span class="tk-str">308</span>)
+<span class="tk-kw">const</span> res = NextResponse.next()
+<span class="tk-kw">if</span> (EDGE_CACHED_PAGES.has(url.pathname)) res.headers.set(<span class="tk-str">"Cache-Control"</span>, <span class="tk-str">"s-maxage=600, stale-while-revalidate=31535400"</span>)</pre>
+  <h3>Stop prefetching the list</h3>
+  <p>Next's <code>&lt;Link&gt;</code> prefetches every link in view. Each prefetch is a separate request for the page's React Server Components data (an <code>?_rsc=</code> request), and I confirmed that Railway's edge never caches those. With dozens of filter tabs and pager links on the page, one homepage view cost about 30 renders on the server. The list pages now use plain <code>&lt;a&gt;</code> tags. A click loads a full page, which the edge serves from its cache.</p>
+  <div class="flow" aria-label="Request path">
+    <div><strong>Visitor</strong>any URL, including tracking parameters</div>
+    <div><strong>Middleware</strong>308 to the canonical URL</div>
+    <div><strong>Edge</strong>serves the cached page, about 90 ms</div>
+    <div><strong>Origin</strong>renders only on a miss, about every 10 min per URL</div>
+  </div>
+</section>
+
+<section id="test">
+  <h2><span class="num">2</span>Load test</h2>
+  <p>I used <a href="https://github.com/hatoo/oha">oha</a>, a command-line load generator, against the live site, ramping up from 100 requests a second. Each request downloaded a full page, about 29 KB.</p>
+<pre>oha -z 60s -q 1000 -c 300 -H "Accept-Encoding: gzip, br" \
+  "https://job-fraud-production.up.railway.app/?band=high"</pre>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Test</th><th class="num">Rate</th><th class="num">Responses</th><th class="num">Median</th><th class="num">p95</th></tr></thead>
+    <tbody>
+      <tr><td>Cached page</td><td class="num">100/s, 30 s</td><td class="num">2,992 &times; 200</td><td class="num">94 ms</td><td class="num">329 ms</td></tr>
+      <tr><td>Cached page, aiming for 1,000/s</td><td class="num">470/s reached, 60 s</td><td class="num">27,889 &times; 200</td><td class="num">523 ms</td><td class="num">1.4 s</td></tr>
+      <tr><td>Tracking-parameter redirect</td><td class="num">50/s, 20 s</td><td class="num">996 &times; 308</td><td class="num">91 ms</td><td class="num">583 ms</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The 1,000-a-second run reached 470 a second with no errors. The limit was my home connection: the test pulled 13.6 MB a second, the same speed as a plain download over that line. For that minute, Railway's metrics show the app server using 0.025 vCPU (2.5% of one core) and sending about 1 MB, because the edge served nearly all of the 777 MB from its cache.</p>
+  <p class="note">The site's ceiling for cached pages is somewhere above 470 a second, and I haven't measured where. Reaching 1,000 a second takes a test machine with a faster link.</p>
+  <p>The redirects are cheap, but they always reach the server. The edge marks them uncacheable, and each click carries a different <code>fbclid</code> anyway, so a cache wouldn't help. They are the one kind of launch traffic the edge doesn't absorb.</p>
+</section>
+
+<section id="misses">
+  <h2><span class="num">3</span>The cache-miss path</h2>
+  <p>Cached pages only cover the URLs people have already visited. After a deploy, the edge cache is empty, and every combination of filter and page is its own URL. The list can be filtered by risk band, job category and posting date, and shows 50 postings a page. I generated 1,080 URLs that nobody had requested yet, each a real combination of those filters at page 41 or later, and sent 100 requests a second at them for 10 seconds.</p>
+  <p>Every request succeeded, but the median was 310 ms, the 90th percentile 3.1 seconds and the 99th 3.9 seconds. Postgres was using about 4 vCPU and the app servers about 0.7, so the database was the bottleneck.</p>
+  <h3>Why</h3>
+  <p>Each list page shows a count next to every filter tab: High 203, Medium 1,310 and so on, for each band, category and date window. Filling them in takes about a dozen count and group-by queries. The data cache was keyed on the filters <em>and the page number</em>, so page 41 of "High" recomputed exactly the same counts as page 1. A burst of deep-page misses ran the full set of aggregate queries every time.</p>
+  <h3>The fix</h3>
+  <p>I split the loader into two caches: the tab counts, keyed on band, category and date window only, and the rows, keyed on the page as well. A miss on a new page of an existing filter now runs one row query.</p>
+<pre><span class="tk-kw">const</span> loadCounts = unstable_cache(loadCountsUncached, [<span class="tk-str">"postings-counts"</span>], { revalidate: <span class="tk-str">600</span> })  <span class="tk-com">// (band, cat, posted)</span>
+<span class="tk-kw">const</span> loadRows   = unstable_cache(loadRowsUncached,   [<span class="tk-str">"postings-rows"</span>],   { revalidate: <span class="tk-str">600</span> })  <span class="tk-com">// (band, cat, posted, page)</span></pre>
+  <p>I re-ran the same test against the same 1,080 URLs after a deploy had emptied both caches. It gave a 208 ms median, an 829 ms 90th percentile and a 1.4-second 99th, and Postgres dropped from about 4 vCPU to about 0.7.</p>
+</section>
+
+<section id="indexes">
+  <h2><span class="num">4</span>Indexes</h2>
+  <p>Next I ran <code>EXPLAIN ANALYZE</code> on the queries a page runs. The table is small, but the rows are wide because each one stores the full posting text, so any query that reads the whole table pays for it.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Query</th><th class="num">Before</th><th>Plan before</th></tr></thead>
+    <tbody>
+      <tr><td>Unfiltered list, page 41</td><td class="num">34 ms</td><td>read all 18,778 rated rows, then sort</td></tr>
+      <tr><td>Whole-corpus counts</td><td class="num">27&ndash;33 ms</td><td>read the whole table</td></tr>
+      <tr><td>One date window's counts</td><td class="num">5 ms</td><td><code>postedDate</code> index</td></tr>
+      <tr><td>"Medium" list, page 41</td><td class="num">4 ms</td><td><code>[riskBand, fraudScore]</code> index</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>The unfiltered list is the homepage's default view, and its sort order (score, then title, then ID) had no matching index. I added one with the same three columns in the same order. Page 41 at 50 rows a page needs rows 2,001 to 2,050, so Postgres now reads the first 2,050 index entries in order and stops. Page 41 dropped from 34 ms to 11 ms. The same index now serves "last 7 days, sorted by score": Postgres walks the score order and skips postings outside the window, in 16 ms.</p>
+  <p>The second index covers <code>scoredAt</code> (when a posting was rated, empty until then) and <code>riskBand</code> (its rating). It was meant to let the whole-corpus counts use an index-only scan. Postgres still chooses a full table scan for them, most likely because the table hasn't been vacuumed since I added the index. An index-only scan can skip the table only for pages the visibility map marks all-visible, and only a vacuum sets those bits. With the counts cached per filter, those queries rarely run now.</p>
+  <figure class="card">
+    <figcaption>Uncached pages at 100 requests a second</figcaption>
+    <p class="sub">Same 1,080 cold URLs, 10 seconds each run, all requests successful. Lower is better.</p>
+    <div class="bars">
+      <div class="bar-group">
+        <h4>90th percentile</h4>
+        <div class="bar-row"><span class="label">Before</span><span class="bar-track"><span class="bar-fill before" style="display:block;width:100%"></span></span><span class="val">3.1 s</span></div>
+        <div class="bar-row"><span class="label">Counts cached</span><span class="bar-track"><span class="bar-fill" style="display:block;width:26.7%"></span></span><span class="val">829 ms</span></div>
+        <div class="bar-row"><span class="label">+ indexes</span><span class="bar-track"><span class="bar-fill" style="display:block;width:18.9%"></span></span><span class="val">587 ms</span></div>
+      </div>
+      <div class="bar-group">
+        <h4>99th percentile</h4>
+        <div class="bar-row"><span class="label">Before</span><span class="bar-track"><span class="bar-fill before" style="display:block;width:100%"></span></span><span class="val">3.9 s</span></div>
+        <div class="bar-row"><span class="label">Counts cached</span><span class="bar-track"><span class="bar-fill" style="display:block;width:35.9%"></span></span><span class="val">1.4 s</span></div>
+        <div class="bar-row"><span class="label">+ indexes</span><span class="bar-track"><span class="bar-fill" style="display:block;width:28.2%"></span></span><span class="val">1.1 s</span></div>
+      </div>
+      <div class="bar-group">
+        <h4>Median</h4>
+        <div class="bar-row"><span class="label">Before</span><span class="bar-track"><span class="bar-fill before" style="display:block;width:100%"></span></span><span class="val">310 ms</span></div>
+        <div class="bar-row"><span class="label">Counts cached</span><span class="bar-track"><span class="bar-fill" style="display:block;width:67.1%"></span></span><span class="val">208 ms</span></div>
+        <div class="bar-row"><span class="label">+ indexes</span><span class="bar-track"><span class="bar-fill" style="display:block;width:70.6%"></span></span><span class="val">219 ms</span></div>
+      </div>
+    </div>
+  </figure>
+  <p>The two fixes add up. Caching the counts cut the database work on a miss, and the indexes made the remaining work cheaper. The median barely moved between the last two runs. The tail is where requests had been queueing behind a saturated database, and the tail is what improved.</p>
+</section>
+
+<section id="gotchas">
+  <h2>What surprised me</h2>
+  <h3>A cache that says HIT can still be wrong</h3>
+  <p>After a batch job added 4,243 postings, every page returned <code>x-cache: HIT</code>, but one filter page showed the old counts for 50 minutes. Two caches stacked up to cause it. The site ran two app replicas, and each keeps its own Next data cache. Once an entry is older than 10 minutes, Next serves it stale to the next request and refreshes it in the background. The edge stored that stale page. When the edge later refreshed its copy, the request could land on the other replica, whose entry hadn't been refreshed yet, so the edge stored stale counts again. The fix was procedural. I now send a few requests the edge never caches (React Server Components requests) so both replicas refresh, then purge the edge and request each page once to refill it. I now check the numbers on each page against the database after a data change, not only the cache header.</p>
+  <h3>Docs commits were emptying the cache</h3>
+  <p>Every deploy purges the edge's HTML, and every push deployed, including commits that only changed documentation. Railway lets a service list "watch paths", file patterns a push must touch to trigger a deploy, so I set them to skip pushes that only change docs. My first pattern started with <code>/**</code>, which matched nothing, so it skipped the next code deploy too. Railway's examples start with <code>**</code>. Checking that a docs-only push is skipped proved only half of it; the deploy status of the next code push showed the other half.</p>
+  <h3>Load tests are cheap</h3>
+  <p>Railway bills CPU and memory by the minute and outbound traffic at $0.05 per GB, with no per-request charge. The whole session of tests used well under a dollar. Running a second replica for the launch costs more than any of the tests.</p>
+</section>
+
+<section id="redis">
+  <h2>Why not Redis</h2>
+  <p>A shared Redis cache would let both replicas use one data cache and keep it across deploys. Today each replica computes a filter's counts once per 10 minutes, so sharing saves at most half of that, and the edge absorbs most traffic before it reaches either replica. It would add a service to pay for and a custom cache handler for Next. It becomes worth it with more replicas, or if deploys during busy periods keep emptying the cache. Neither applies yet.</p>
+</section>
+
+<section id="method">
+  <h2>Method and caveats</h2>
+  <ul>
+    <li>All tests ran from one machine on a home connection, through one edge location. Real visitors spread across several, which is easier on the system.</li>
+    <li>The uncached test used pages 41 and later, because the earlier pages were already cached. Deep pages cost more in Postgres than the pages most visitors open, so this test is harsher than real traffic.</li>
+    <li>Railway samples CPU every 30 seconds and these tests lasted 10, so the CPU numbers show the scale of the change, not a precise figure. The latency numbers come from the load generator and are exact for each run.</li>
+    <li>"Aborted due to deadline" in oha's output means requests still in flight when the timer ended. They are not errors.</li>
+    <li>The site ran on two replicas during every test.</li>
+  </ul>
+  <p>The code is public at <a href="https://github.com/yelgabo/job-fraud">github.com/yelgabo/job-fraud</a>. The launch runbook with every measurement is <a href="https://github.com/yelgabo/job-fraud/blob/main/docs/launch-runbook.md">docs/launch-runbook.md</a>.</p>
+  <footer>Written by Yel Gabo.</footer>
+</section>
+</main>
+</div>
+<script>
+(function () {
+  var root = document.documentElement;
+  var themeBtn = document.getElementById("themeBtn");
+  function currentIsDark() {
+    var set = root.getAttribute("data-theme");
+    if (set === "dark") return true;
+    if (set === "light") return false;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function syncLabel() { themeBtn.textContent = currentIsDark() ? "Light mode" : "Dark mode"; }
+  try {
+    var saved = localStorage.getItem("rl-theme");
+    if (saved === "dark" || saved === "light") root.setAttribute("data-theme", saved);
+  } catch (e) {}
+  syncLabel();
+  themeBtn.addEventListener("click", function () {
+    var next = currentIsDark() ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("rl-theme", next); } catch (e) {}
+    syncLabel();
+  });
+})();
+</script>
+</body>
+</html>

@@ -258,15 +258,16 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
   <p class="lede">Before announcing <a href="https://job-fraud-production.up.railway.app">job-fraud</a> publicly, I set a target of 1,000 requests a second and tested toward it. The cached pages held at the limit of my test machine. The uncached pages exposed a Postgres bottleneck, which two small changes cut from a 3.1-second 90th percentile to 587 ms.</p>
   <div class="stats">
     <div class="stat"><p class="n">470/s</p><p class="l">cached pages, 0 errors; my home connection was the limit</p></div>
-    <div class="stat"><p class="n">0.025</p><p class="l">vCPU used by the app server during that run</p></div>
+    <div class="stat"><p class="n">2.5%</p><p class="l">of one CPU core used by the app server during that run</p></div>
     <div class="stat"><p class="n">3.1 s &rarr; 587 ms</p><p class="l">p90 for uncached pages at 100/s</p></div>
-    <div class="stat"><p class="n">~4 &rarr; ~1</p><p class="l">Postgres vCPU during the same test</p></div>
+    <div class="stat"><p class="n">4 &rarr; 0.7</p><p class="l">CPU cores Postgres used in the uncached test, before and after the first fix</p></div>
   </div>
 </div>
 
 <section id="context">
   <h2>The site and the goal</h2>
-  <p><a href="https://job-fraud-production.up.railway.app">job-fraud</a> reviews job postings from WorkBC, British Columbia's public job board, and rates each one Low, Medium or High on whether it looks like a genuine attempt to hire locally. It holds about 23,000 judged postings. The front end is Next.js 15 (App Router), the data lives in Postgres through Prisma, and everything runs on Railway, behind Railway's edge CDN.</p>
+  <p><a href="https://job-fraud-production.up.railway.app">job-fraud</a> reviews job postings from WorkBC, British Columbia's public job board, and rates each one Low, Medium or High on whether it looks like a genuine attempt to hire locally. It holds about 23,000 rated postings. The front end is Next.js 15 (App Router), the data lives in Postgres through Prisma, and everything runs on Railway, a hosting platform. Railway puts a CDN in front of each web service; I call it "the edge" below, and the Node server behind it "the origin".</p>
+  <p>The CPU figures in this post come from Railway's per-service metrics, which report CPU in vCPUs. One vCPU is one CPU core's worth of time, so 0.5 means half a core was busy on average.</p>
   <p>A public launch sends a burst of people to the same few pages within minutes. I set the target at 1,000 requests a second on the public pages and treated it as a requirement. I didn't plan for the average traffic I expected afterwards.</p>
   <p>The site had one constraint that shaped everything below. Railway's build step has no network route to the private database, so a page that queries Postgres cannot be rendered at build time. The list pages are therefore rendered on every request (<code>force-dynamic</code>) and keep their data in Next's data cache (<code>unstable_cache</code>, 10 minutes). That data cache protected Postgres, but the pages themselves were never cached at the edge.</p>
 </section>
@@ -308,22 +309,22 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
     </tbody>
   </table>
   </div>
-  <p>The 1,000-a-second run reached 470 a second with no errors. The limit was my home connection: the test pulled 13.6 MB a second, the same speed as a plain download over that line. Railway's metrics for that minute show the app server at 0.025 vCPU and 0.001 GB sent, because the edge served all 777 MB.</p>
+  <p>The 1,000-a-second run reached 470 a second with no errors. The limit was my home connection: the test pulled 13.6 MB a second, the same speed as a plain download over that line. For that minute, Railway's metrics show the app server using 0.025 vCPU (2.5% of one core) and sending about 1 MB, because the edge served nearly all of the 777 MB from its cache.</p>
   <p class="note">The site's ceiling for cached pages is somewhere above 470 a second, and I haven't measured where. Reaching 1,000 a second takes a test machine with a faster link.</p>
   <p>The redirects are cheap, but they always reach the server. The edge marks them uncacheable, and each click carries a different <code>fbclid</code> anyway, so a cache wouldn't help. They are the one kind of launch traffic the edge doesn't absorb.</p>
 </section>
 
 <section id="misses">
   <h2><span class="num">3</span>The cache-miss path</h2>
-  <p>Cached pages only cover the URLs people have already visited. After a deploy, the edge cache is empty, and every combination of filter and page is its own URL. I generated 1,080 valid, never-requested list pages (band, category and date filters, page 41 onwards) and sent 100 a second at them for 10 seconds.</p>
-  <p>Every request succeeded, but the median was 310 ms, the 90th percentile 3.1 seconds and the 99th 3.9 seconds. Railway's metrics showed Postgres at about 4 vCPU and the app at 0.7, so the database was the bottleneck.</p>
+  <p>Cached pages only cover the URLs people have already visited. After a deploy, the edge cache is empty, and every combination of filter and page is its own URL. The list can be filtered by risk band, job category and posting date, and shows 50 postings a page. I generated 1,080 URLs that nobody had requested yet, each a real combination of those filters at page 41 or later, and sent 100 requests a second at them for 10 seconds.</p>
+  <p>Every request succeeded, but the median was 310 ms, the 90th percentile 3.1 seconds and the 99th 3.9 seconds. Postgres was using about 4 vCPU and the app servers about 0.7, so the database was the bottleneck.</p>
   <h3>Why</h3>
   <p>Each list page shows a count next to every filter tab: High 203, Medium 1,310 and so on, for each band, category and date window. Filling them in takes about a dozen count and group-by queries. The data cache was keyed on the filters <em>and the page number</em>, so page 41 of "High" recomputed exactly the same counts as page 1. A burst of deep-page misses ran the full set of aggregate queries every time.</p>
   <h3>The fix</h3>
   <p>I split the loader into two caches: the tab counts, keyed on band, category and date window only, and the rows, keyed on the page as well. A miss on a new page of an existing filter now runs one row query.</p>
 <pre><span class="tk-kw">const</span> loadCounts = unstable_cache(loadCountsUncached, [<span class="tk-str">"postings-counts"</span>], { revalidate: <span class="tk-str">600</span> })  <span class="tk-com">// (band, cat, posted)</span>
 <span class="tk-kw">const</span> loadRows   = unstable_cache(loadRowsUncached,   [<span class="tk-str">"postings-rows"</span>],   { revalidate: <span class="tk-str">600</span> })  <span class="tk-com">// (band, cat, posted, page)</span></pre>
-  <p>The same test against the same 1,080 cold pages, after a deploy had emptied both caches, gave a 208 ms median, an 829 ms 90th percentile and a 1.4-second 99th, with Postgres at about 0.7 vCPU.</p>
+  <p>I re-ran the same test against the same 1,080 URLs after a deploy had emptied both caches. It gave a 208 ms median, an 829 ms 90th percentile and a 1.4-second 99th, and Postgres dropped from about 4 vCPU to about 0.7.</p>
 </section>
 
 <section id="indexes">
@@ -333,15 +334,15 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
   <table>
     <thead><tr><th>Query</th><th class="num">Before</th><th>Plan before</th></tr></thead>
     <tbody>
-      <tr><td>Unfiltered list, page 41</td><td class="num">34 ms</td><td>read all 18,778 judged rows, then sort</td></tr>
+      <tr><td>Unfiltered list, page 41</td><td class="num">34 ms</td><td>read all 18,778 rated rows, then sort</td></tr>
       <tr><td>Whole-corpus counts</td><td class="num">27&ndash;33 ms</td><td>read the whole table</td></tr>
       <tr><td>One date window's counts</td><td class="num">5 ms</td><td><code>postedDate</code> index</td></tr>
       <tr><td>"Medium" list, page 41</td><td class="num">4 ms</td><td><code>[riskBand, fraudScore]</code> index</td></tr>
     </tbody>
   </table>
   </div>
-  <p>The unfiltered list is the homepage's default view, and its sort order (score, then title, then ID) had no matching index. I added one with the same three columns in the same order, so Postgres reads the first 2,050 entries in order and stops. Page 41 dropped from 34 ms to 11 ms. The same index now serves "last 7 days, sorted by score": Postgres walks the score order and skips postings outside the window, in 16 ms.</p>
-  <p>The second index, <code>[scoredAt, riskBand]</code>, was meant to let the whole-corpus counts read only the index. Postgres still chooses a full scan for them, most likely because the table hasn't been vacuumed since; Postgres reads from an index alone only for rows a vacuum has marked as unchanged. With the counts cached per filter, those queries rarely run now.</p>
+  <p>The unfiltered list is the homepage's default view, and its sort order (score, then title, then ID) had no matching index. I added one with the same three columns in the same order. Page 41 at 50 rows a page needs rows 2,001 to 2,050, so Postgres now reads the first 2,050 index entries in order and stops. Page 41 dropped from 34 ms to 11 ms. The same index now serves "last 7 days, sorted by score": Postgres walks the score order and skips postings outside the window, in 16 ms.</p>
+  <p>The second index covers <code>scoredAt</code> (when a posting was rated, empty until then) and <code>riskBand</code> (its rating). It was meant to let the whole-corpus counts use an index-only scan. Postgres still chooses a full table scan for them, most likely because the table hasn't been vacuumed since I added the index. An index-only scan can skip the table only for pages the visibility map marks all-visible, and only a vacuum sets those bits. With the counts cached per filter, those queries rarely run now.</p>
   <figure class="card">
     <figcaption>Uncached pages at 100 requests a second</figcaption>
     <p class="sub">Same 1,080 cold URLs, 10 seconds each run, all requests successful. Lower is better.</p>
@@ -372,9 +373,9 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
 <section id="gotchas">
   <h2>What surprised me</h2>
   <h3>A cache that says HIT can still be wrong</h3>
-  <p>After a batch job added 4,243 postings, every page returned <code>x-cache: HIT</code>, but one filter page showed the old counts for 50 minutes. Two caches stacked up to cause it. With two app replicas, each keeps its own data cache, and once an entry is past its 10 minutes, Next serves it stale to the first request and refreshes it in the background. The edge cached that stale render and then refreshed it from a replica that hadn't been asked yet. The fix was procedural: send a few requests straight to the servers to refresh both replicas, then purge the edge and warm it. I now check the numbers on each page against the database after a data change, not only the cache header.</p>
+  <p>After a batch job added 4,243 postings, every page returned <code>x-cache: HIT</code>, but one filter page showed the old counts for 50 minutes. Two caches stacked up to cause it. The site ran two app replicas, and each keeps its own Next data cache. Once an entry is older than 10 minutes, Next serves it stale to the next request and refreshes it in the background. The edge stored that stale page. When the edge later refreshed its copy, the request could land on the other replica, whose entry hadn't been refreshed yet, so the edge stored stale counts again. The fix was procedural. I now send a few requests the edge never caches (React Server Components requests) so both replicas refresh, then purge the edge and request each page once to refill it. I now check the numbers on each page against the database after a data change, not only the cache header.</p>
   <h3>Docs commits were emptying the cache</h3>
-  <p>Every deploy purges the edge's HTML, and every push deployed, including commits that only changed documentation. I set Railway's watch paths to skip pushes that only touch docs. My first pattern started with <code>/**</code>, which matched nothing, so it skipped the next code deploy too. Railway's examples start with <code>**</code>. Checking that a docs-only push is skipped proved only half of it; the deploy status of the next code push showed the other half.</p>
+  <p>Every deploy purges the edge's HTML, and every push deployed, including commits that only changed documentation. Railway lets a service list "watch paths", file patterns a push must touch to trigger a deploy, so I set them to skip pushes that only change docs. My first pattern started with <code>/**</code>, which matched nothing, so it skipped the next code deploy too. Railway's examples start with <code>**</code>. Checking that a docs-only push is skipped proved only half of it; the deploy status of the next code push showed the other half.</p>
   <h3>Load tests are cheap</h3>
   <p>Railway bills CPU and memory by the minute and outbound traffic at $0.05 per GB, with no per-request charge. The whole session of tests used well under a dollar. Running a second replica for the launch costs more than any of the tests.</p>
 </section>

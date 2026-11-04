@@ -1184,9 +1184,9 @@ main {
 .writing-entry p { color: var(--ink-muted); font-size: 16px; max-width: 50ch; margin: 14px 0 20px; }
 .project-hero > .text-link { display: inline-block; margin-bottom: 30px; }
 .project-hero .project-links { margin-top: 24px; }
-.btest-figure { margin-top: 0; }
-.btest-figure img { display: block; width: 100%; height: auto; }
-.btest-figure .figure__caption { color: var(--ink-muted); }
+.afterbar-figure { margin-top: 0; }
+.afterbar-figure img { display: block; width: 100%; height: auto; }
+.afterbar-figure .figure__caption { color: var(--ink-muted); }
 .project-prose { max-width: var(--reading); padding-top: 48px; }
 .project-prose p { color: var(--ink-muted); margin: 16px 0 0; }
 .background-page main { max-width: 824px; }
@@ -1265,4 +1265,13 @@ main {
   .project-page .nav-links { justify-content: flex-start; margin-left: -8px; }
   .project-grid { grid-template-columns: minmax(0, 1fr); }
   .home-contact { align-items: flex-start; }
+}
+
+.project-wordmark { display: inline-flex; align-items: center; gap: 12px; }
+.project-wordmark img { flex: none; }
+.project-hero h1.project-wordmark { gap: 20px; }
+.project-hero > p.project-kind { font-size: 13px; margin: 0 0 12px; }
+@media (max-width: 600px) {
+  .project-hero h1.project-wordmark { gap: 12px; }
+  .project-hero h1.project-wordmark img { width: 44px; height: 44px; }
 }

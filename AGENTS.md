@@ -1,6 +1,7 @@
 # Homepage
 
-Keep a three- or four-sentence professional overview above the projects. Name
-concrete work and impact, using the existing profile and Background page as
-sources. Keep estimates and eligible revenue qualified. The full biographical
-sections belong on Background.
+Keep a three- or four-sentence introduction above the projects. Use "Ex-Meta".
+Write with confidence about ownership, technical depth, and building end to end.
+Write as a capable builder speaking directly about how they work. Keep revenue
+and cost metrics, the full biographical sections, and detailed professional
+results on Background.

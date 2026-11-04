@@ -19,3 +19,6 @@ optional sharpening. Check the active renderer before describing its stack.
 Frame Imelda's portfolio image around the picks table and data. Keep the large
 daily summary outside the image.
 Open the saved asset itself to verify its framing after capturing a scrolled view.
+
+PhotoBomb's project card uses a marketing image with its actual simulator UI.
+Keep the app icon as a small brand mark on the project page.

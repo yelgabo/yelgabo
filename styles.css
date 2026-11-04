@@ -1203,19 +1203,6 @@ main {
 .background-page .recognition-list li { margin-bottom: 16px; }
 .background-page .check-label { display: block; color: var(--ink); font-weight: 600; }
 
-.project-card--app .project-image {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 16 / 10;
-  background: #eef2ff;
-}
-.project-card--app .project-image img {
-  width: 44%;
-  height: auto;
-  aspect-ratio: 1;
-  object-fit: contain;
-  border-radius: 22%;
-}
 .project-lead-figure { margin-top: 0; }
 .project-lead-figure img { display: block; width: 100%; height: auto; }
 .project-page .figure__caption { color: var(--ink-muted); }

@@ -1088,10 +1088,10 @@ main {
   letter-spacing: -0.055em;
 }
 .home-bio {
-  max-width: 32ch;
+  max-width: var(--reading);
   margin: 0 0 26px;
-  font-size: clamp(1.2rem, 2.2vw, 1.5rem);
-  line-height: 1.55;
+  font-size: clamp(1.0625rem, 1.7vw, 1.25rem);
+  line-height: 1.65;
   color: var(--ink-muted);
 }
 .profile-links,

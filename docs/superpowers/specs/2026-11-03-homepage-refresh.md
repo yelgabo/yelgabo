@@ -12,7 +12,8 @@ btest with the supplied screenshot.
 - Keep Manrope and the site's existing neutral palette: background `#fafaf9`,
   surface `#ffffff`, ink `#0a0a0a`, secondary text `#525252`, border `#e7e5e4`.
   Use btest's amber only as a small project accent.
-- Replace the long homepage bio with two plain sentences. Preserve the original
+- Replace the long homepage bio with a four-sentence overview of concrete work
+  and impact. Preserve the original
   bio and Impact, Leadership, Influence, Recognition, and Closing sections in
   `background.html`. Link that page from the shared navigation.
 - Lead with btest in a wide project row. Put the four existing selected projects

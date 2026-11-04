@@ -24,6 +24,6 @@ Use the marketing image based on the actual picks table for its card and case pa
 PhotoBomb's project card uses a marketing image with its actual simulator UI.
 Keep the app icon as a small brand mark on the project page.
 
-Afterbar is btest's portfolio name. Keep the original project URL as a redirect.
-The live app and Python package still use btest. Label that distinction on the case
-page. Use a current saved run when refreshing its screenshot; runs 84-89 were retired.
+Afterbar is the app and portfolio name. Keep the original project URL as a redirect.
+The repository, Python package and CLI still use btest. Use a current saved run when
+refreshing its screenshot; runs 84-89 were retired.

@@ -4,11 +4,11 @@ Imelda uses a product photograph with its actual picks table on a laptop. Its pa
 
 ## Afterbar
 
-Afterbar is the portfolio name for btest. It refers to testing decisions after market bars arrive. The bracket mark contains one price bar, connecting the identity to code and market data. Keep the existing amber accent and dark workbench.
+Afterbar is the public app name for btest. It refers to testing decisions after market bars arrive. The bracket mark contains one price bar, connecting the identity to code and market data. Keep the existing amber accent and dark workbench.
 
 The product is a trading research workbench. Its copy should describe versioned strategies, benchmarks and trading costs without promising returns. The public project page moves to `work/afterbar.html`; the previous URL redirects there.
 
-This change covers the portfolio identity. The live application, repository, Python imports and CLI retain `btest`. The case page identifies the screenshot's original name. The new screenshot shows current saved run 109 rather than the retired run in the original asset.
+The live application and portfolio use Afterbar. The repository, Python imports and CLI retain `btest`. The screenshot shows the Afterbar workbench with current saved run 109 rather than the retired run in the original asset.
 
 Afterbar was selected over Trialbar and Barwright as the shorter, more natural name. Initial web searches were a naming sanity check, not a trademark or domain clearance.
 

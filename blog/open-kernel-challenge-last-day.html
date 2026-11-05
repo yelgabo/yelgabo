@@ -21,6 +21,13 @@
   --accent-ink: #7D5600;
   --chart: #2F6FB0;
   --dot: #7A8492;
+  --node: #F7F8F6;
+  --node-back: #E4E8E2;
+  --node-line: #8C96A3;
+  --edge: #7D5600;
+  --hl: #DCE9F7;
+  --good: #2E7D5B;
+  --bad: #B8322A;
   --table-head: #E7EBE5;
   color-scheme: light;
 }
@@ -35,6 +42,13 @@
     --accent-ink: #F0B429;
     --chart: #6FA8E8;
     --dot: #8C97A6;
+    --node: #222A35;
+    --node-back: #2A3340;
+    --node-line: #5E6B7C;
+    --edge: #F0B429;
+    --hl: #213650;
+    --good: #5CC196;
+    --bad: #F07167;
     --table-head: #222A35;
     color-scheme: dark;
   }
@@ -49,6 +63,13 @@
   --accent-ink: #F0B429;
   --chart: #6FA8E8;
   --dot: #8C97A6;
+  --node: #222A35;
+  --node-back: #2A3340;
+  --node-line: #5E6B7C;
+  --edge: #F0B429;
+  --hl: #213650;
+  --good: #5CC196;
+  --bad: #F07167;
   --table-head: #222A35;
   color-scheme: dark;
 }
@@ -162,6 +183,25 @@ figure.card .source { color: var(--muted); font-size: 14px; margin: 8px 0 0; max
 .chart-scroll .tc { fill: var(--chart); }
 .chart-scroll .grid { stroke: var(--line); }
 .chart-scroll .axis { stroke: var(--muted); }
+.chart-scroll .tb { fill: var(--ink); font-weight: 700; }
+.chart-scroll .tgood { fill: var(--good); }
+.chart-scroll .tbad { fill: var(--bad); }
+.chart-scroll .tedge { fill: var(--edge); }
+.chart-scroll .node { fill: var(--node); stroke: var(--node-line); stroke-width: 1.4; }
+.chart-scroll .node-back { fill: var(--node-back); stroke: var(--node-line); stroke-width: 1.4; }
+.chart-scroll .store { fill: var(--node); stroke: var(--edge); stroke-width: 1.4; }
+.chart-scroll .store-cap { fill: var(--node-back); stroke: var(--edge); stroke-width: 1.4; }
+.chart-scroll .hl { fill: var(--hl); stroke: var(--chart); stroke-width: 1.6; }
+.chart-scroll .edge { fill: none; stroke: var(--edge); stroke-width: 1.8; }
+.chart-scroll .edge-good { fill: none; stroke: var(--good); stroke-width: 1.8; }
+.chart-scroll .edge-bad { fill: none; stroke: var(--bad); stroke-width: 1.8; }
+.chart-scroll .arrowhead { fill: var(--edge); }
+.chart-scroll .arrowhead-good { fill: var(--good); }
+.chart-scroll .arrowhead-bad { fill: var(--bad); }
+.chart-scroll .fill-chart { fill: var(--chart); }
+.chart-scroll .fill-dot { fill: var(--dot); }
+.chart-scroll .fill-good { fill: var(--good); }
+.chart-scroll .fill-bad { fill: var(--bad); }
 .table-wrap { overflow-x: auto; margin: 14px 0 20px; }
 table { border-collapse: collapse; width: 100%; font-size: 15px; }
 th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -208,7 +248,7 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
   <div class="stats">
     <div class="stat"><p class="n">2.280x</p><p class="l">faster than SGLang on one decoder layer</p></div>
     <div class="stat"><p class="n">308 &rarr; 158</p><p class="l">overall rank, morning of Nov 4 to the close</p></div>
-    <div class="stat"><p class="n">2.3%</p><p class="l">layer time gained on the last day</p></div>
+    <div class="stat"><p class="n">2.3%</p><p class="l">speedup gained on the last day (2.229x to 2.280x)</p></div>
     <div class="stat"><p class="n">$181</p><p class="l">total GPU rental for the campaign</p></div>
   </div>
 </div>
@@ -216,6 +256,117 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
 <section id="intro">
   <p>The challenge gives you one layer of Muse Spark Open. It is the slice a single GPU runs when the model is split 8 ways: the QKV projection, gated attention, the output projection, a router, the routed experts in NVFP4, and the norms in between.</p>
   <p>You write it as one Python file with CUDA in strings. The judge times it against SGLang's kernels at twelve cells: decode and 8-token verify, each at batch 1, 16 and 32, on a sliding-window layer and a full-attention layer. Your score is the geometric mean of the per-load speedups. The overall leaderboard is ordered by this one problem.</p>
+  <figure class="card">
+    <figcaption>One layer, six components, timed at twelve cells</figcaption>
+    <p class="sub">Top: what the file runs, left to right. Bottom: the twelve cells the judge times it at, which combine into one score.</p>
+    <div class="chart-scroll" tabindex="0" role="region" aria-label="Diagram of the decoder layer and its twelve timed cells (scrolls sideways on small screens)">
+      <svg viewBox="0 0 760 510" role="img" aria-labelledby="layer-title layer-desc" font-size="13">
+        <title id="layer-title">What one Muse Spark layer runs, and the twelve cells it is timed on</title>
+        <desc id="layer-desc">Top: one decoder layer, the slice one GPU runs when the model is split 8 ways, as a pipeline of six steps in order: QKV projection, which makes queries, keys and values; gated attention, sliding-window or full; output projection; norms and residual in the glue-boundary kernel; the router, which picks 8 of 256 experts per token; and the routed experts, with NVFP4 weights. Bottom: a grid of twelve timed cells. Rows are the sliding-window layer and the full-attention layer. Columns are decode and 8-token verify, each at batch 1, 16 and 32. Each cell yields a speedup over SGLang. The twelve speedups are multiplied and the twelfth root taken, giving the score: the geometric mean of the 12 speedups over SGLang.</desc>
+        <defs><marker id="layer-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10Z"/></marker></defs>
+
+        <text x="20" y="34" font-size="15"><tspan class="tb">What one layer runs</tspan><tspan class="t2">, one GPU's slice of an 8-way split</tspan></text>
+
+        <rect class="node" x="20" y="56" width="100" height="100" rx="8"/>
+        <rect class="node" x="144" y="56" width="100" height="100" rx="8"/>
+        <rect class="node" x="268" y="56" width="100" height="100" rx="8"/>
+        <rect class="node" x="392" y="56" width="100" height="100" rx="8"/>
+        <rect class="node" x="516" y="56" width="100" height="100" rx="8"/>
+        <rect class="hl" x="640" y="56" width="100" height="100" rx="8"/>
+
+        <g text-anchor="middle" font-size="14">
+          <text class="tb" x="70" y="80">QKV</text>
+          <text class="tb" x="70" y="97">projection</text>
+          <text class="tb" x="194" y="80">Gated</text>
+          <text class="tb" x="194" y="97">attention</text>
+          <text class="tb" x="318" y="80">Output</text>
+          <text class="tb" x="318" y="97">projection</text>
+          <text class="tb" x="442" y="80">Norms and</text>
+          <text class="tb" x="442" y="97">residual</text>
+          <text class="tb" x="566" y="80">Router</text>
+          <text class="tb" x="690" y="80">Routed</text>
+          <text class="tb" x="690" y="97">experts</text>
+        </g>
+        <g text-anchor="middle" font-size="12">
+          <text class="t2" x="70" y="126">queries, keys</text>
+          <text class="t2" x="70" y="142">and values</text>
+          <text class="t2" x="194" y="126">sliding-window</text>
+          <text class="t2" x="194" y="142">or full</text>
+          <text class="t2" x="442" y="126">glue-boundary</text>
+          <text class="t2" x="442" y="142">kernel</text>
+          <text class="t2" x="566" y="126">picks 8 of 256</text>
+          <text class="t2" x="566" y="142">per token</text>
+          <text class="t2" x="690" y="126">NVFP4</text>
+          <text class="t2" x="690" y="142">weights</text>
+        </g>
+
+        <path class="edge" d="M120 106H143" marker-end="url(#layer-arrow)"/>
+        <path class="edge" d="M244 106H267" marker-end="url(#layer-arrow)"/>
+        <path class="edge" d="M368 106H391" marker-end="url(#layer-arrow)"/>
+        <path class="edge" d="M492 106H515" marker-end="url(#layer-arrow)"/>
+        <path class="edge" d="M616 106H639" marker-end="url(#layer-arrow)"/>
+
+        <line class="grid" x1="20" x2="740" y1="186" y2="186"/>
+
+        <text x="20" y="222" font-size="15"><tspan class="tb">The twelve cells it is timed on</tspan><tspan class="t2">, each against SGLang's kernels</tspan></text>
+
+        <g text-anchor="middle">
+          <text class="tb" x="314" y="256" font-size="14">decode</text>
+          <text class="tb" x="606" y="256" font-size="14">8-token verify</text>
+        </g>
+        <line class="grid" x1="180" x2="448" y1="264" y2="264"/>
+        <line class="grid" x1="472" x2="740" y1="264" y2="264"/>
+        <g text-anchor="middle" font-size="12">
+          <text class="t2" x="222" y="284">batch 1</text>
+          <text class="t2" x="314" y="284">batch 16</text>
+          <text class="t2" x="406" y="284">batch 32</text>
+          <text class="t2" x="514" y="284">batch 1</text>
+          <text class="t2" x="606" y="284">batch 16</text>
+          <text class="t2" x="698" y="284">batch 32</text>
+        </g>
+
+        <text class="t1" x="20" y="319">sliding-window layer</text>
+        <text class="t1" x="20" y="375">full-attention layer</text>
+
+        <g>
+          <rect class="node" x="180" y="296" width="84" height="44" rx="8"/>
+          <rect class="node" x="272" y="296" width="84" height="44" rx="8"/>
+          <rect class="node" x="364" y="296" width="84" height="44" rx="8"/>
+          <rect class="node" x="472" y="296" width="84" height="44" rx="8"/>
+          <rect class="node" x="564" y="296" width="84" height="44" rx="8"/>
+          <rect class="node" x="656" y="296" width="84" height="44" rx="8"/>
+          <rect class="node" x="180" y="352" width="84" height="44" rx="8"/>
+          <rect class="node" x="272" y="352" width="84" height="44" rx="8"/>
+          <rect class="node" x="364" y="352" width="84" height="44" rx="8"/>
+          <rect class="node" x="472" y="352" width="84" height="44" rx="8"/>
+          <rect class="node" x="564" y="352" width="84" height="44" rx="8"/>
+          <rect class="node" x="656" y="352" width="84" height="44" rx="8"/>
+        </g>
+        <g text-anchor="middle" font-size="12">
+          <text class="t2" x="222" y="322">speedup</text>
+          <text class="t2" x="314" y="322">speedup</text>
+          <text class="t2" x="406" y="322">speedup</text>
+          <text class="t2" x="514" y="322">speedup</text>
+          <text class="t2" x="606" y="322">speedup</text>
+          <text class="t2" x="698" y="322">speedup</text>
+          <text class="t2" x="222" y="378">speedup</text>
+          <text class="t2" x="314" y="378">speedup</text>
+          <text class="t2" x="406" y="378">speedup</text>
+          <text class="t2" x="514" y="378">speedup</text>
+          <text class="t2" x="606" y="378">speedup</text>
+          <text class="t2" x="698" y="378">speedup</text>
+        </g>
+
+        <line class="grid" x1="180" x2="740" y1="408" y2="408"/>
+        <path class="edge" d="M460 410V452" marker-end="url(#layer-arrow)"/>
+        <text class="tedge" x="474" y="436" font-size="12">multiply all 12, take the 12th root</text>
+
+        <rect class="hl" x="200" y="454" width="520" height="44" rx="8"/>
+        <text class="tb" x="460" y="481" text-anchor="middle" font-size="14">Score = geometric mean of the 12 speedups over SGLang</text>
+      </svg>
+    </div>
+    <p class="source">Every cell counts equally in the score, whichever kernel it stresses. The overall leaderboard is ordered by this one problem.</p>
+  </figure>
   <p>I did not write most of the CUDA by hand. I ran the campaign as the lead of a team of Claude Code agents, each working one lane: attention, the dense projections, the MoE, launch overlap, synchronization. This post covers the first week briefly, then what moved the number on the final day, and what I would do differently. Terms are defined in the <a href="#glossary">glossary</a> at the end.</p>
 </section>
 
@@ -223,6 +374,96 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
   <h2>How the campaign ran</h2>
   <p>The campaign ran for eight days, from October 28 to the close at midnight Pacific on November 4. One Claude Code session acted as lead. It read the profiles, decided what to try, and spawned an agent per lane, each with its own worktree and a checkpoint file to resume from.</p>
   <p>Measurement ran on a rented H200 on RunPod, one job at a time behind a GPU lock. The judge allowed 20 public runs and 40 private checks per problem per day, so every candidate had to earn a slot.</p>
+  <figure class="card">
+    <figcaption>One lead, one agent per lane, one GPU, a rationed judge</figcaption>
+    <p class="sub">How work moved from the lead session through the GPU to the judge.</p>
+    <div class="chart-scroll" tabindex="0" role="region" aria-label="Diagram of how the agent campaign was organised (scrolls sideways on small screens)">
+      <svg viewBox="0 0 760 594" role="img" aria-labelledby="camp-title camp-desc" font-size="13">
+        <title id="camp-title">How the agent campaign was organised</title>
+        <desc id="camp-desc">A single lead Claude Code session reads the profiles and decides what to try. It spawns one lane agent per lane: attention, dense projections, MoE, launch overlap and synchronization, each in its own worktree. Each lane agent writes a checkpoint file to resume from. Lane agents queue candidate files for a rented H200 on RunPod; the queue sits behind a GPU lock, so the H200 runs one job at a time and sends timings back to the lane agents. The lead submits the chosen file to the judge, the organizers' service, which allows 20 public runs and 40 private checks per problem per day.</desc>
+        <defs><marker id="camp-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10Z"/></marker></defs>
+        <g transform="translate(0 -16)">
+
+        <rect class="node" x="40" y="40" width="240" height="100" rx="8"/>
+        <g text-anchor="middle">
+          <text class="tb" x="160" y="66" font-size="15">Lead session</text>
+          <text class="t2" x="160" y="88" font-size="12">one Claude Code session</text>
+          <text class="t2" x="160" y="106" font-size="12">reads the profiles and</text>
+          <text class="t2" x="160" y="122" font-size="12">decides what to try</text>
+        </g>
+
+        <rect class="node" x="500" y="40" width="236" height="100" rx="8"/>
+        <g text-anchor="middle">
+          <text class="tb" x="618" y="66" font-size="15">Judge</text>
+          <text class="t2" x="618" y="88" font-size="12">the organizers' service</text>
+          <text class="t2" x="618" y="106" font-size="12">20 public runs + 40 private</text>
+          <text class="t2" x="618" y="122" font-size="12">checks per problem per day</text>
+        </g>
+
+        <path class="edge" d="M280 90H499" marker-end="url(#camp-arrow)"/>
+        <text class="tedge" x="390" y="80" text-anchor="middle" font-size="12">submits chosen file</text>
+
+        <rect class="node-back" x="68" y="222" width="240" height="130" rx="8"/>
+        <rect class="node-back" x="54" y="236" width="240" height="130" rx="8"/>
+        <rect class="node" x="40" y="250" width="240" height="130" rx="8"/>
+        <g text-anchor="middle">
+          <text class="tb" x="160" y="278" font-size="15">Lane agents</text>
+          <text class="t2" x="160" y="300" font-size="12">attention, dense projections,</text>
+          <text class="t2" x="160" y="317" font-size="12">MoE, launch overlap,</text>
+          <text class="t2" x="160" y="334" font-size="12">synchronization</text>
+          <text class="t1" x="160" y="362" font-size="12">each in its own worktree</text>
+        </g>
+
+        <path class="edge" d="M160 140V221" marker-end="url(#camp-arrow)"/>
+        <text class="tedge" x="174" y="186" font-size="12">spawns one per lane</text>
+
+        <path class="store" d="M600 236A68 12 0 0 1 736 236V330A68 12 0 0 1 600 330Z"/>
+        <ellipse class="store-cap" cx="668" cy="236" rx="68" ry="12"/>
+        <g text-anchor="middle">
+          <text class="tb" x="668" y="274" font-size="14">Checkpoint</text>
+          <text class="t2" x="668" y="294" font-size="12">file per agent,</text>
+          <text class="t2" x="668" y="311" font-size="12">to resume from</text>
+        </g>
+
+        <path class="edge" d="M308 280H599" marker-end="url(#camp-arrow)"/>
+        <text class="tedge" x="454" y="270" text-anchor="middle" font-size="12">writes checkpoint</text>
+
+        <path class="store" d="M40 460H316A14 45 0 0 1 316 550H40A14 45 0 0 1 40 460Z"/>
+        <ellipse class="store-cap" cx="316" cy="505" rx="14" ry="45"/>
+        <text class="t1" x="172" y="482" text-anchor="middle" font-size="12">behind a GPU lock</text>
+        <rect class="node-back" x="54" y="492" width="72" height="44" rx="6"/>
+        <rect class="node-back" x="136" y="492" width="72" height="44" rx="6"/>
+        <rect class="node-back" x="218" y="492" width="72" height="44" rx="6"/>
+        <g text-anchor="middle" font-size="12">
+          <text class="t1" x="90" y="511">candidate</text>
+          <text class="t1" x="90" y="527">file</text>
+          <text class="t1" x="172" y="511">candidate</text>
+          <text class="t1" x="172" y="527">file</text>
+          <text class="t1" x="254" y="511">candidate</text>
+          <text class="t1" x="254" y="527">file</text>
+        </g>
+
+        <path class="edge" d="M120 380V459" marker-end="url(#camp-arrow)"/>
+        <text class="tedge" x="134" y="424" font-size="12">queue candidate</text>
+
+        <rect class="node" x="420" y="460" width="180" height="90" rx="8"/>
+        <g text-anchor="middle">
+          <text class="tb" x="510" y="490" font-size="15">Rented H200</text>
+          <text class="t2" x="510" y="511" font-size="12">on RunPod</text>
+          <text class="t2" x="510" y="529" font-size="12">one job at a time</text>
+        </g>
+
+        <path class="edge" d="M330 505H419" marker-end="url(#camp-arrow)"/>
+        <text class="tedge" x="375" y="495" text-anchor="middle" font-size="12">runs next</text>
+
+        <path class="edge" d="M510 460V340H309" marker-end="url(#camp-arrow)"/>
+        <text class="tedge" x="410" y="330" text-anchor="middle" font-size="12">timings</text>
+
+        <text class="t2" x="40" y="592" font-size="12">Stack = parallel lane agents. Cylinder = a stored file. Queue items = candidate files waiting for the GPU.</text>
+        </g>
+      </svg>
+    </div>
+  </figure>
   <figure class="card">
     <figcaption>Most of the speedup came early; the last day added 2.3% and about 150 places</figcaption>
     <p class="sub">Public row on the decode-layer board, speedup over SGLang (x)</p>
@@ -287,6 +528,98 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
   <p>The biggest single gain of the day was two lines. The MoE kernel ran the experts' matrix work across every CTA on the GPU, then hit a grid-wide barrier, then ran a final pass that sums each token's eight expert outputs. The barrier made every token wait for the slowest CTA, even though a token only needs its own eight experts.</p>
   <p>The replacement is a completion counter per expert. When a CTA finishes its share of an expert, <code>bar.sync</code> orders all of that CTA's writes. Then one thread bumps the expert's counter with a release (<code>red.release.gpu</code>).</p>
   <p>The final pass for a token polls the counters of its eight experts with an acquire (<code>ld.acquire.gpu</code>). It reads their outputs only once each counter reaches its expected count.</p>
+  <figure class="card">
+    <figcaption>With a counter per expert, a token's final pass waits only for its own experts</figcaption>
+    <p class="sub">Illustrative timeline, not measured timings. Rows are CTAs doing expert matrix work; time runs left to right.</p>
+    <div class="chart-scroll" tabindex="0" role="region" aria-label="Timeline comparing a grid barrier with per-expert counters (scrolls sideways on small screens)">
+      <svg viewBox="0 0 760 578" role="img" aria-labelledby="barrier-title barrier-desc" font-size="13">
+        <title id="barrier-title">Grid barrier versus a completion counter per expert</title>
+        <desc id="barrier-desc">Two illustrative timelines share a time axis running left to right. Five CTAs do expert matrix work. CTA 0 holds some of token B's experts and finishes last; CTA 1 and CTA 2 hold token A's experts and finish early; CTA 3 holds more of token B's experts; CTA 4 holds other experts. Before: a grid barrier sits at the slowest CTA's finish, and the final passes for token A and token B both start after it. After: when a CTA finishes its share of an expert, bar.sync orders its writes and one thread bumps the expert's counter with red.release.gpu. Token A's final pass polls its experts' counters with ld.acquire.gpu and starts as soon as CTA 2, the last of its CTAs, releases, well before the slowest CTA finishes. Token B depends on the slowest CTA, so its final pass starts at the same time as before.</desc>
+        <defs>
+          <marker id="barrier-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10Z"/></marker>
+          <marker id="barrier-axis-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="fill-dot" d="M0 0L10 5L0 10Z"/></marker>
+        </defs>
+
+        <text class="tb" x="20" y="30" font-size="15">Before: grid barrier</text>
+        <g>
+          <text class="t1" x="20" y="68">CTA 0, slowest</text>
+          <text class="t1" x="20" y="96">CTA 1</text>
+          <text class="t1" x="20" y="124">CTA 2</text>
+          <text class="t1" x="20" y="152">CTA 3</text>
+          <text class="t1" x="20" y="180">CTA 4</text>
+          <text class="t1" x="20" y="216">token A</text>
+          <text class="t1" x="20" y="244">token B</text>
+        </g>
+        <rect class="node" x="150" y="52" width="450" height="22" rx="4"/>
+        <rect class="hl" x="150" y="80" width="250" height="22" rx="4"/>
+        <rect class="hl" x="150" y="108" width="290" height="22" rx="4"/>
+        <rect class="node" x="150" y="136" width="270" height="22" rx="4"/>
+        <rect class="node" x="150" y="164" width="230" height="22" rx="4"/>
+        <g>
+          <text class="t1" x="160" y="68">token B's experts</text>
+          <text class="t1" x="160" y="96">token A's experts</text>
+          <text class="t1" x="160" y="124">token A's experts</text>
+          <text class="t1" x="160" y="152">token B's experts</text>
+          <text class="t1" x="160" y="180">other experts</text>
+        </g>
+        <path class="edge-bad" d="M600 42V262" style="stroke-width:2.5"/>
+        <text class="tbad" x="610" y="30" font-weight="700">grid barrier</text>
+        <text class="t2" x="588" y="216" text-anchor="end">both final passes start after the barrier</text>
+        <rect class="hl" x="620" y="200" width="100" height="22" rx="4"/>
+        <rect class="node" x="620" y="228" width="100" height="22" rx="4"/>
+        <text class="t1" x="670" y="216" text-anchor="middle">final pass</text>
+        <text class="t1" x="670" y="244" text-anchor="middle">final pass</text>
+
+        <line class="grid" x1="20" x2="740" y1="276" y2="276"/>
+
+        <text class="tb" x="20" y="306" font-size="15">After: a counter per expert</text>
+        <g>
+          <text class="t1" x="20" y="344">CTA 0, slowest</text>
+          <text class="t1" x="20" y="372">CTA 1</text>
+          <text class="t1" x="20" y="400">CTA 2</text>
+          <text class="t1" x="20" y="428">CTA 3</text>
+          <text class="t1" x="20" y="456">CTA 4</text>
+          <text class="t1" x="20" y="492">token A</text>
+          <text class="t1" x="20" y="520">token B</text>
+        </g>
+        <rect class="node" x="150" y="328" width="450" height="22" rx="4"/>
+        <rect class="hl" x="150" y="356" width="250" height="22" rx="4"/>
+        <rect class="hl" x="150" y="384" width="290" height="22" rx="4"/>
+        <rect class="node" x="150" y="412" width="270" height="22" rx="4"/>
+        <rect class="node" x="150" y="440" width="230" height="22" rx="4"/>
+        <g>
+          <text class="t1" x="160" y="344">token B's experts</text>
+          <text class="t1" x="160" y="372">token A's experts</text>
+          <text class="t1" x="160" y="400">token A's experts</text>
+          <text class="t1" x="160" y="428">token B's experts</text>
+          <text class="t1" x="160" y="456">other experts</text>
+        </g>
+        <g>
+          <circle class="tedge" cx="600" cy="339" r="4.5"/>
+          <circle class="tedge" cx="400" cy="367" r="4.5"/>
+          <circle class="tedge" cx="440" cy="395" r="4.5"/>
+          <circle class="tedge" cx="420" cy="423" r="4.5"/>
+          <circle class="tedge" cx="380" cy="451" r="4.5"/>
+        </g>
+        <g font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="12">
+          <text class="tedge" x="454" y="392">bar.sync, then</text>
+          <text class="tedge" x="454" y="408">red.release.gpu</text>
+        </g>
+        <path class="edge" d="M440 400V487H469" marker-end="url(#barrier-arrow)"/>
+        <text class="tedge" x="428" y="492" text-anchor="end">polls with <tspan font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="12">ld.acquire.gpu</tspan></text>
+        <path class="edge" d="M600 344V515H619" marker-end="url(#barrier-arrow)"/>
+        <text class="t2" x="588" y="520" text-anchor="end">depends on the slowest CTA, as before</text>
+        <rect class="hl" x="470" y="476" width="100" height="22" rx="4"/>
+        <rect class="node" x="620" y="504" width="100" height="22" rx="4"/>
+        <text class="t1" x="520" y="492" text-anchor="middle">final pass</text>
+        <text class="t1" x="670" y="520" text-anchor="middle">final pass</text>
+
+        <path class="axis" d="M150 548H732" marker-end="url(#barrier-axis-arrow)"/>
+        <text class="t2" x="732" y="568" text-anchor="end">time (illustrative)</text>
+      </svg>
+    </div>
+    <p class="source">Token A gains because all of its experts finish early; token B still waits for the slowest CTA, because one of its experts runs there. Each dot is a CTA's release on an expert's counter after <code>bar.sync</code>.</p>
+  </figure>
   <p>With the batch-32 decode build converted, the judge moved from 10,110 us to 10,046 us. The same change on the larger verify builds followed later in the day.</p>
   <p>Why is it still correct with the barrier gone?</p>
   <ul>
@@ -308,6 +641,105 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
   <p>After the barrier win, I asked an agent that had not seen our reasoning to review every synchronization point in the layer. It found a real gap in the MoE helper warp's completion credit. That is the counter later phases wait on before they read the first phase's output.</p>
   <p>The old sequence: every lane runs <code>__threadfence()</code> after its stores, then <code>__syncwarp()</code>, then lane 0 does a relaxed <code>atomicAdd</code> on the counter.</p>
   <p>An earlier rule-out had called this a valid PTX release pattern. But a release pattern is per thread: lane 0's own fence, then lane 0's own atomic. The other 31 lanes' stores reach lane 0 only through the warp relay, after lane 0's fence. So the PTX model does not order them before the release.</p>
+  <figure class="card">
+    <figcaption>Lane 0's release covers every lane's stores only when its fence comes after <code>__syncwarp()</code></figcaption>
+    <p class="sub">The MoE helper warp's completion credit, old and fixed. Time runs downward; lane k stands for any of the other 31 lanes.</p>
+    <div class="chart-scroll" tabindex="0" role="region" aria-label="Sequence diagrams of the old and fixed completion credit (scrolls sideways on small screens)">
+      <svg viewBox="0 0 760 500" role="img" aria-labelledby="fence-title fence-desc" font-size="13">
+        <title id="fence-title">Old and fixed fence placement in the helper warp's completion credit</title>
+        <desc id="fence-desc">Two sequence diagrams side by side, time flowing downward, each with lane k (one of the other 31 lanes), lane 0, and the counter. Old: both lanes do their stores, then each runs __threadfence(), then __syncwarp() spans both lanes, then lane 0 does a relaxed atomicAdd on the counter. Lane k's stores reach lane 0 only through the warp relay at __syncwarp(), after lane 0's fence, so the PTX model does not order them before the release made of lane 0's own fence and lane 0's own atomic. Fixed: both lanes do their stores with no per-lane fence, then __syncwarp(), then lane 0 alone runs fence.sc.gpu, then lane 0 does the atomicAdd on the counter. Lane k's stores now reach lane 0 before its fence, so lane 0's fence and atomic form a release that covers every lane's stores.</desc>
+        <defs>
+          <marker id="fence-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10Z"/></marker>
+          <marker id="fence-arrow-good" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead-good" d="M0 0L10 5L0 10Z"/></marker>
+          <marker id="fence-arrow-bad" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead-bad" d="M0 0L10 5L0 10Z"/></marker>
+        </defs>
+
+        <line class="grid" x1="380" x2="380" y1="14" y2="486"/>
+
+        <text class="tb" x="33" y="30" font-size="15">Old</text>
+        <line class="grid" x1="108" x2="108" y1="90" y2="290" stroke-dasharray="4 4"/>
+        <line class="grid" x1="282" x2="282" y1="90" y2="296" stroke-dasharray="4 4"/>
+        <rect class="node-back" x="33" y="44" width="150" height="46" rx="6"/>
+        <text class="tb" x="108" y="63" text-anchor="middle" font-size="14">lane k</text>
+        <text class="t2" x="108" y="80" text-anchor="middle" font-size="12">(one of the other 31)</text>
+        <rect class="node-back" x="207" y="44" width="150" height="46" rx="6"/>
+        <text class="tb" x="282" y="72" text-anchor="middle" font-size="14">lane 0</text>
+
+        <rect class="node" x="43" y="108" width="130" height="30" rx="5"/>
+        <text class="t1" x="108" y="128" text-anchor="middle">stores</text>
+        <rect class="node" x="217" y="108" width="130" height="30" rx="5"/>
+        <text class="t1" x="282" y="128" text-anchor="middle">stores</text>
+
+        <g font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="12" text-anchor="middle">
+          <rect class="node" x="43" y="154" width="130" height="30" rx="5"/>
+          <text class="t1" x="108" y="173">__threadfence()</text>
+          <rect class="node" x="217" y="154" width="130" height="30" rx="5"/>
+          <rect class="edge-bad" x="217" y="154" width="130" height="30" rx="5"/>
+          <text class="t1" x="282" y="173">__threadfence()</text>
+          <rect class="node" x="43" y="202" width="304" height="30" rx="5"/>
+          <text class="t1" x="195" y="221">__syncwarp()</text>
+        </g>
+
+        <text class="tbad" x="195" y="252" text-anchor="middle" font-size="12">lane k's stores reach</text>
+        <text class="tbad" x="195" y="267" text-anchor="middle" font-size="12">lane 0 after its fence</text>
+        <path class="edge-bad" d="M108 278H281" marker-end="url(#fence-arrow-bad)"/>
+
+        <path class="edge" d="M282 296V368" marker-end="url(#fence-arrow)"/>
+        <text class="tedge" x="272" y="336" text-anchor="end" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="12">relaxed atomicAdd</text>
+        <path class="store" d="M226 378V414A56 8 0 0 0 338 414V378A56 8 0 0 0 226 378Z"/>
+        <ellipse class="store-cap" cx="282" cy="378" rx="56" ry="8"/>
+        <text class="tb" x="282" y="406" text-anchor="middle" font-size="14">counter</text>
+
+        <g class="tbad" font-size="13">
+          <text x="33" y="448">Lane 0's fence ran before lane k's stores</text>
+          <text x="33" y="465">reached it, so the PTX model does not</text>
+          <text x="33" y="482">order them before the release.</text>
+        </g>
+
+        <text class="tb" x="403" y="30" font-size="15">Fixed</text>
+        <line class="grid" x1="478" x2="478" y1="90" y2="290" stroke-dasharray="4 4"/>
+        <line class="grid" x1="652" x2="652" y1="90" y2="296" stroke-dasharray="4 4"/>
+        <rect class="node-back" x="403" y="44" width="150" height="46" rx="6"/>
+        <text class="tb" x="478" y="63" text-anchor="middle" font-size="14">lane k</text>
+        <text class="t2" x="478" y="80" text-anchor="middle" font-size="12">(one of the other 31)</text>
+        <rect class="node-back" x="577" y="44" width="150" height="46" rx="6"/>
+        <text class="tb" x="652" y="72" text-anchor="middle" font-size="14">lane 0</text>
+
+        <rect class="node" x="413" y="108" width="130" height="30" rx="5"/>
+        <text class="t1" x="478" y="128" text-anchor="middle">stores</text>
+        <rect class="node" x="587" y="108" width="130" height="30" rx="5"/>
+        <text class="t1" x="652" y="128" text-anchor="middle">stores</text>
+
+        <text class="t2" x="565" y="173" text-anchor="middle" font-size="12">no per-lane fences</text>
+
+        <g font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="12" text-anchor="middle">
+          <rect class="node" x="413" y="202" width="304" height="30" rx="5"/>
+          <text class="t1" x="565" y="221">__syncwarp()</text>
+        </g>
+
+        <text class="tgood" x="565" y="252" text-anchor="middle" font-size="12">lane k's stores reach</text>
+        <text class="tgood" x="565" y="267" text-anchor="middle" font-size="12">lane 0 before its fence</text>
+        <path class="edge-good" d="M478 278H651" marker-end="url(#fence-arrow-good)"/>
+
+        <rect class="node" x="587" y="292" width="130" height="30" rx="5"/>
+        <rect class="edge-good" x="587" y="292" width="130" height="30" rx="5"/>
+        <text class="t1" x="652" y="311" text-anchor="middle" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="12">fence.sc.gpu</text>
+
+        <path class="edge" d="M652 322V368" marker-end="url(#fence-arrow)"/>
+        <text class="tedge" x="642" y="350" text-anchor="end" font-family="IBM Plex Mono, ui-monospace, Menlo, monospace" font-size="12">atomicAdd</text>
+        <path class="store" d="M596 378V414A56 8 0 0 0 708 414V378A56 8 0 0 0 596 378Z"/>
+        <ellipse class="store-cap" cx="652" cy="378" rx="56" ry="8"/>
+        <text class="tb" x="652" y="406" text-anchor="middle" font-size="14">counter</text>
+
+        <g class="tgood" font-size="13">
+          <text x="403" y="448">The fence now sits after the relay, so</text>
+          <text x="403" y="465">lane 0's fence and atomic form a release</text>
+          <text x="403" y="482">that covers every lane's stores.</text>
+        </g>
+      </svg>
+    </div>
+    <p class="source">A release pattern is per thread: lane 0's own fence, then lane 0's own atomic. No test ever failed on the old order; the fix passed the reference check at all twelve cells and cost nothing in speed.</p>
+  </figure>
   <p>The fix moves the fence to where it does its job. The 31 per-lane fences are gone, and lane 0 alone runs <code>fence.sc.gpu</code> after <code>__syncwarp()</code> and before its atomic. Now lane 0's fence and atomic form a release that covers every lane's stores. It passed the reference check at all twelve cells and cost nothing in speed.</p>
   <p>No test had ever failed on this, and I never saw it misbehave. I took the fix anyway: otherwise the file's correctness would rest on what the hardware happens to do, not on what the memory model promises.</p>
 </section>
@@ -315,6 +747,93 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
 <section id="eat">
   <h2>Handing the evening to an agent team</h2>
   <p>The file behind my final row came out of EAT, a harness from the paper <a href="https://arxiv.org/abs/2610.36848">Evolving Agent Teams</a> (<a href="https://github.com/caoshiyi/EAT">code</a>). A supervisor agent designs a team of Claude Code agents, the harness runs your official eval at the end of each iteration, and the supervisor reads the transcripts and redesigns the team. It never writes the solution itself.</p>
+  <figure class="card">
+    <figcaption>EAT's supervisor redesigns the team after every scored iteration</figcaption>
+    <p class="sub">Start at the supervisor and follow the arrows. A stack means several agents at once; a cylinder is a file.</p>
+    <div class="chart-scroll" tabindex="0" role="region" aria-label="Diagram of the EAT loop (scrolls sideways on small screens)">
+      <svg viewBox="0 0 760 500" role="img" aria-labelledby="eat-title eat-desc" font-size="13">
+        <title id="eat-title">How the EAT loop works</title>
+        <desc id="eat-desc">A supervisor agent, which never writes the solution, designs a team of Claude Code agents, including an integrator. The team reads task.md, which holds the rules every agent gets: no routing slack, keep every fence, never touch the judge. The team edits the candidate file, one Python file. After every iteration the harness runs eval.sh, which copies the file to the H200 and times all 12 cells against SGLang. The score and the team's transcripts go back to the supervisor, which redesigns the team. The team also logs results to a strict results file with a row for every loss and null, and later agents read it so they do not repeat them. The November 4 run had a 400 dollar budget and a hard stop at 22:30, and spent 131.94 dollars over five iterations.</desc>
+        <defs><marker id="eat-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10Z"/></marker></defs>
+
+        <path class="store" d="M20 42A85 12 0 0 1 190 42V148A85 12 0 0 1 20 148Z"/>
+        <ellipse class="store-cap" cx="105" cy="42" rx="85" ry="12"/>
+        <g text-anchor="middle">
+          <text class="tb" x="105" y="80" font-size="15">task.md</text>
+          <text class="t2" x="105" y="102">no routing slack</text>
+          <text class="t2" x="105" y="120">keep every fence</text>
+          <text class="t2" x="105" y="138">never touch the judge</text>
+        </g>
+
+        <rect class="node" x="260" y="30" width="220" height="92" rx="8"/>
+        <g text-anchor="middle">
+          <text class="tb" x="370" y="68" font-size="15">Supervisor agent</text>
+          <text class="t2" x="370" y="92">never writes the solution</text>
+        </g>
+
+        <rect class="node" x="548" y="30" width="192" height="112" rx="8"/>
+        <g text-anchor="middle">
+          <text class="tb" x="644" y="58" font-size="15">eval.sh</text>
+          <text class="t2" x="644" y="80">run after every iteration</text>
+          <text class="t2" x="644" y="99">times all 12 cells</text>
+          <text class="t2" x="644" y="118">against SGLang</text>
+        </g>
+
+        <rect class="node-back" x="284" y="196" width="250" height="96" rx="8"/>
+        <rect class="node-back" x="272" y="208" width="250" height="96" rx="8"/>
+        <rect class="node" x="260" y="220" width="250" height="96" rx="8"/>
+        <g text-anchor="middle">
+          <text class="tb" x="385" y="258" font-size="15">Team of Claude Code agents</text>
+          <text class="t2" x="385" y="282">including an integrator</text>
+        </g>
+
+        <path class="store" d="M600 222A70 12 0 0 1 740 222V306A70 12 0 0 1 600 306Z"/>
+        <ellipse class="store-cap" cx="670" cy="222" rx="70" ry="12"/>
+        <g text-anchor="middle">
+          <text class="tb" x="670" y="262" font-size="15">candidate file</text>
+          <text class="t2" x="670" y="284">one Python file</text>
+        </g>
+
+        <path class="store" d="M290 392A95 12 0 0 1 480 392V468A95 12 0 0 1 290 468Z"/>
+        <ellipse class="store-cap" cx="385" cy="392" rx="95" ry="12"/>
+        <g text-anchor="middle">
+          <text class="tb" x="385" y="430" font-size="15">results file</text>
+          <text class="t2" x="385" y="452">a row for every loss and null</text>
+        </g>
+
+        <path class="edge" d="M330 124V193" marker-end="url(#eat-arrow)"/>
+        <text class="tedge" x="322" y="164" text-anchor="end">designs the team</text>
+
+        <path class="edge" d="M430 196V125" marker-end="url(#eat-arrow)"/>
+        <text class="tedge" x="438" y="164">transcripts</text>
+
+        <path class="edge" d="M105 162V268H257" marker-end="url(#eat-arrow)"/>
+        <text class="tedge" x="113" y="212">given to every agent</text>
+
+        <path class="edge" d="M536 268H597" marker-end="url(#eat-arrow)"/>
+        <text class="tedge" x="567" y="258" text-anchor="middle">edits</text>
+
+        <path class="edge" d="M670 208V145" marker-end="url(#eat-arrow)"/>
+        <text class="tedge" x="662" y="182" text-anchor="end">copied to the H200</text>
+
+        <path class="edge" d="M546 76H483" marker-end="url(#eat-arrow)"/>
+        <text class="tedge" x="514" y="68" text-anchor="middle">score</text>
+
+        <path class="edge" d="M340 318V377" marker-end="url(#eat-arrow)"/>
+        <text class="tedge" x="332" y="352" text-anchor="end">logs results</text>
+
+        <path class="edge" d="M430 378V319" marker-end="url(#eat-arrow)"/>
+        <text class="tedge" x="438" y="352">what not to repeat</text>
+
+        <g>
+          <text class="tb" x="560" y="414">The Nov 4 run</text>
+          <text class="t2" x="560" y="436">$400 budget, hard stop 22:30</text>
+          <text class="t2" x="560" y="456">5 iterations, $131.94 spent</text>
+        </g>
+      </svg>
+    </div>
+    <p class="source">The supervisor never edits the file; the team makes every change. Source: the EAT run on November 4, 2026, and the EAT paper's description of the harness.</p>
+  </figure>
   <p>Setting it up took three files:</p>
   <ul>
     <li>a <code>task.md</code> with the rules every agent gets: no routing slack, keep every fence, never touch the judge;</li>
@@ -344,6 +863,65 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
 <section id="noise">
   <h2>The judge is noisy, so the same file went in many times</h2>
   <p>The judge's run-to-run spread is larger than almost every change I made. Most single changes were worth 0.1 to 0.5% of layer time; the same file's results spread over about 2.4%.</p>
+  <figure class="card">
+    <figcaption>A typical change is far smaller than the judge's spread</figcaption>
+    <p class="sub">Each bar is a size in percent of layer time on the judge. The dashed line marks where the judge's spread ends.</p>
+    <div class="chart-scroll" tabindex="0" role="region" aria-label="Bar chart comparing change sizes with the judge's spread (scrolls sideways on small screens)">
+      <svg viewBox="0 12 760 318" role="img" aria-labelledby="noise-title noise-desc" font-size="13">
+        <title id="noise-title">A typical change compared with the judge's spread and the gaps that mattered</title>
+        <desc id="noise-desc">Horizontal bars on a shared scale from 0 to 3.5 percent of layer time. A typical single change is worth 0.1 to 0.5 percent. The judge's run-to-run spread for one fixed file is about 2.4 percent, so a typical change sits well inside it. The whole last-day gain, from 2.229x to 2.280x, is 2.3 percent. The gap from rank 308 to rank 100 on the morning of November 4, 2.229x against 2.297x, is about 3 percent.</desc>
+        <defs><marker id="noise-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10Z"/></marker></defs>
+
+        <g>
+          <line class="grid" x1="310" x2="310" y1="28" y2="272"/>
+          <line class="grid" x1="380" x2="380" y1="28" y2="272"/>
+          <line class="grid" x1="450" x2="450" y1="28" y2="272"/>
+          <line class="grid" x1="520" x2="520" y1="28" y2="272"/>
+          <line class="grid" x1="590" x2="590" y1="28" y2="272"/>
+          <line class="grid" x1="660" x2="660" y1="28" y2="272"/>
+          <line class="grid" x1="730" x2="730" y1="28" y2="272"/>
+        </g>
+        <line class="axis" x1="240" x2="240" y1="28" y2="272"/>
+        <line class="axis" x1="240" x2="730" y1="272" y2="272"/>
+        <g text-anchor="middle">
+          <text class="t2" x="240" y="292">0%</text>
+          <text class="t2" x="310" y="292">0.5%</text>
+          <text class="t2" x="380" y="292">1%</text>
+          <text class="t2" x="450" y="292">1.5%</text>
+          <text class="t2" x="520" y="292">2%</text>
+          <text class="t2" x="590" y="292">2.5%</text>
+          <text class="t2" x="660" y="292">3%</text>
+          <text class="t2" x="730" y="292">3.5%</text>
+          <text class="t2" x="485" y="318">share of layer time</text>
+        </g>
+
+        <line class="axis" x1="576" x2="576" y1="28" y2="112" stroke-dasharray="5 4"/>
+        <text class="t2" x="584" y="69">judge spread</text>
+
+        <g text-anchor="end">
+          <text class="t1" x="226" y="62">Typical single change</text>
+          <text class="t2" x="226" y="79" font-size="12">most changes I made</text>
+          <text class="t1" x="226" y="122">Judge spread, one file</text>
+          <text class="t2" x="226" y="139" font-size="12">same bytes, run to run</text>
+          <text class="t1" x="226" y="182">Whole last-day gain</text>
+          <text class="t2" x="226" y="199" font-size="12">2.229x to 2.280x</text>
+          <text class="t1" x="226" y="242">Gap, rank 308 to rank 100</text>
+          <text class="t2" x="226" y="259" font-size="12">2.229x vs 2.297x, Nov 4 morning</text>
+        </g>
+
+        <rect class="fill-chart" x="254" y="52" width="56" height="24" rx="3"/>
+        <rect class="fill-dot" x="240" y="112" width="336" height="24" rx="3"/>
+        <rect class="fill-chart" x="240" y="172" width="322" height="24" rx="3"/>
+        <rect class="fill-chart" x="240" y="232" width="420" height="24" rx="3"/>
+
+        <text class="t1" x="318" y="69">0.1 to 0.5%</text>
+        <text class="t1" x="584" y="129">about 2.4%</text>
+        <text class="t1" x="570" y="189">2.3%</text>
+        <text class="t1" x="668" y="249">about 3%</text>
+      </svg>
+    </div>
+    <p class="source">A typical change fits several times over inside one file's run-to-run spread. The whole last-day gain is about the size of that spread, and the gap to rank 100 is a little larger. Source: judge results for the same bytes, and the board on November 4, 2026.</p>
+  </figure>
   <figure class="card">
     <figcaption>Each file spreads over about 240 us on the judge; the two files differ by about 24 us</figcaption>
     <p class="sub">Judge results for the same bytes, weighted layer time in us (lower is faster). Filled: private check. Hollow: public run.</p>

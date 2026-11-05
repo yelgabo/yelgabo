@@ -3,14 +3,18 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Rectangle plotter</title>
+<title>Rectangle Plotter | Yelnil Gabo</title>
+<meta name="description" content="Type two rectangles and inspect their overlap, coordinates, and area.">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--paper:#f7f6f1;--ink:#1d2430;--grid:#d5dce8;--axis:#6b7a90;--a:#1f6fd6;--b:#d8541f;--both:#5b3fb0;--muted:#5c6675;--bad:#b3261e}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif}
+.topbar{max-width:1120px;margin:0 auto;padding:20px 24px 0;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.topbar a{color:var(--muted);text-decoration:none;font-weight:600}
+.topbar a:hover{color:var(--ink)}
 main{max-width:1120px;margin:0 auto;padding:28px 24px 48px;display:grid;grid-template-columns:300px 1fr;gap:28px;align-items:start}
-h1{font-size:20px;font-weight:600;margin:0 0 6px}
+h1{font-size:28px;font-weight:600;letter-spacing:-0.01em;margin:0 0 8px}
 .hint{margin:0 0 18px;color:var(--muted);font-size:14px;line-height:1.5}
 code{font-family:"IBM Plex Mono",monospace;font-size:13px}
 label{display:block;font-size:14px;margin:14px 0 6px}
@@ -27,9 +31,10 @@ text{font-family:"IBM Plex Mono",monospace;font-size:11px;fill:var(--muted)}
 </style>
 </head>
 <body>
+<header class="topbar"><a href="../index.html">Yelnil Gabo</a><a href="../tools.html">&larr; All tools</a></header>
 <main>
 <section>
-<h1>Rectangle plotter</h1>
+<h1>Rectangle Plotter</h1>
 <p class="hint">Each rectangle is <code>[x1, y1, x2, y2]</code>: bottom-left corner, then top-right corner. The plot and overlap check update as you type.</p>
 <label for="r1"><span class="swatch" style="background:var(--a)"></span>rec1</label>
 <input id="r1" value="[0,0,1,1]" spellcheck="false" autocomplete="off">

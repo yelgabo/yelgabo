@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Yelnil Gabo | Software engineer</title>
   <meta name="description" content="Software engineer, previously at Meta. Projects, small tools, and a blog by Yelnil Gabo." />
-  <meta name="theme-color" content="#fafaf9" />
+  <meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#0c0c0b" media="(prefers-color-scheme: dark)" />
   <link rel="canonical" href="https://www.yelgabo.com/" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.yelgabo.com/" />
@@ -15,7 +16,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" />
-  <link rel="stylesheet" href="styles.css?v=7" />
+  <link rel="stylesheet" href="styles.css?v=8" />
+  <script src="theme.js"></script>
 </head>
 <body class="home-page">
   <a class="skip-link" href="#main">Skip to content</a>
@@ -47,7 +49,7 @@
       <article class="project-feature" id="btest-title" aria-labelledby="afterbar-title">
         <div class="project-feature-copy">
           <p class="project-kind">Trading research</p>
-          <h3 id="afterbar-title"><a class="project-wordmark" href="work/afterbar.html"><img src="assets/projects/afterbar-mark.svg" width="40" height="40" alt="" />Afterbar</a></h3>
+          <h3 id="afterbar-title"><a class="project-wordmark" href="work/afterbar.html"><svg class="afterbar-mark" width="40" height="40" viewBox="0 0 48 48" fill="none" aria-hidden="true"><path class="afterbar-mark__frame" d="M14 8H6v32h8M34 8h8v32h-8" stroke-width="5" stroke-linecap="square"/><path d="M24 12v24" stroke="#946500" stroke-width="2"/><path d="M19 19h10v12H19z" fill="#f2b544"/></svg>Afterbar</a></h3>
           <p class="project-description">A workbench for testing trading strategies. Write Python in the browser, run it against historical market data, and compare the results with a benchmark.</p>
           <p class="project-detail">Versioned strategies, trading costs, parameter sweeps, and paper trading.</p>
           <div class="project-links"><a href="work/afterbar.html">About the project</a><a href="https://web-production-584c0.up.railway.app" target="_blank" rel="noopener">Open app<span class="sr-only"> (opens in a new tab)</span></a><a href="https://github.com/yelgabo/btest" target="_blank" rel="noopener">GitHub<span class="sr-only"> (opens in a new tab)</span></a></div>

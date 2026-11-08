@@ -19,8 +19,47 @@
   --feature-gap: 104px;
   --frame-radius: 14px;
   --frame-shadow: 0 1px 2px rgba(10, 10, 10, 0.04), 0 24px 48px -24px rgba(10, 10, 10, 0.18);
+  --header-bg: rgba(250, 250, 249, 0.85);
+  color-scheme: light;
   /* --proj is the per-project accent; set inline on a row/body. Falls back to ink. */
 }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c0c0b;
+    --surface: #161615;
+    --ink: #ededec;
+    --ink-strong: #ffffff;
+    --ink-muted: #a8a8a6;
+    --ink-dim: #74746f;
+    --border: #262624;
+    --border-strong: #3a3a37;
+    --accent: #ededec;
+    --frame-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 24px 48px -24px rgba(0, 0, 0, 0.6);
+    --header-bg: rgba(12, 12, 11, 0.85);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c0c0b;
+  --surface: #161615;
+  --ink: #ededec;
+  --ink-strong: #ffffff;
+  --ink-muted: #a8a8a6;
+  --ink-dim: #74746f;
+  --border: #262624;
+  --border-strong: #3a3a37;
+  --accent: #ededec;
+  --frame-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 24px 48px -24px rgba(0, 0, 0, 0.6);
+  --header-bg: rgba(12, 12, 11, 0.85);
+  color-scheme: dark;
+}
+
+/* Project accents are tuned for a light page; text set in them is lifted toward white on dark. */
+[style*="--proj"] { --proj-ink: var(--proj); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) [style*="--proj"] { --proj-ink: color-mix(in srgb, var(--proj) 60%, #ffffff); }
+}
+:root[data-theme="dark"] [style*="--proj"] { --proj-ink: color-mix(in srgb, var(--proj) 60%, #ffffff); }
 
 * { box-sizing: border-box; }
 
@@ -57,7 +96,7 @@ a:focus-visible {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(250, 250, 249, 0.85);
+  background: var(--header-bg);
   backdrop-filter: saturate(140%) blur(10px);
   -webkit-backdrop-filter: saturate(140%) blur(10px);
   border-bottom: 1px solid var(--border);
@@ -81,7 +120,7 @@ a:focus-visible {
 
 .nav-links {
   list-style: none;
-  margin: 0;
+  margin: 0 0 0 auto;
   padding: 0;
   display: flex;
   gap: 4px;
@@ -101,6 +140,22 @@ a:focus-visible {
   color: var(--ink);
   background: var(--border);
 }
+
+.theme-toggle {
+  flex: none;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+.theme-toggle:hover { color: var(--ink); border-color: var(--ink-muted); }
+.theme-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
 
 /* ============ Layout ============ */
 main {
@@ -326,7 +381,7 @@ main {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--proj, var(--ink));
+  color: var(--proj-ink, var(--ink));
 }
 .feature__kicker::before {
   content: "";
@@ -378,14 +433,14 @@ main {
   gap: 7px;
   font-size: 0.95rem;
   font-weight: 600;
-  color: var(--proj, var(--ink));
+  color: var(--proj-ink, var(--ink));
 }
 .feature__cta .arrow {
   display: inline-block;
   transition: transform 160ms ease;
 }
 .feature:hover .feature__cta .arrow { transform: translateX(4px); }
-.feature:hover .feature__folio { color: var(--proj, var(--ink-dim)); }
+.feature:hover .feature__folio { color: var(--proj-ink, var(--ink-dim)); }
 /* stretched link: whole card (incl. screenshot) navigates to the case study.
    Scoped to .feature because .feature is the positioned ancestor that bounds
    inset: 0; unscoped, the overlay escapes to the viewport and covers the hero. */
@@ -643,7 +698,7 @@ main {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: rgba(250, 250, 249, 0.85);
+  background: var(--header-bg);
   backdrop-filter: saturate(140%) blur(10px);
   -webkit-backdrop-filter: saturate(140%) blur(10px);
   border-bottom: 1px solid var(--border);
@@ -670,6 +725,7 @@ main {
 .subnav__back .arrow { transition: transform 160ms ease; }
 .subnav__back:hover .arrow { transform: translateX(-3px); }
 .subnav__proj {
+  margin-left: auto;
   display: inline-flex;
   align-items: center;
   gap: 9px;
@@ -708,7 +764,7 @@ main {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--proj, var(--ink));
+  color: var(--proj-ink, var(--ink));
 }
 .case-hero__kicker::before {
   content: "";
@@ -757,7 +813,7 @@ main {
   margin-bottom: 5px;
 }
 .meta-strip__v { font-size: 0.95rem; font-weight: 600; color: var(--ink); }
-.meta-strip__v.is-accent { color: var(--proj, var(--ink)); }
+.meta-strip__v.is-accent { color: var(--proj-ink, var(--ink)); }
 
 .case-section { padding: 56px 0 0; }
 .case-kicker {
@@ -769,7 +825,7 @@ main {
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--proj, var(--ink-muted));
+  color: var(--proj-ink, var(--ink-muted));
 }
 .case-kicker::before {
   content: "";
@@ -836,7 +892,7 @@ main {
   font-size: 2rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: var(--proj, var(--ink));
+  color: var(--proj-ink, var(--ink));
   line-height: 1;
 }
 .stat-card__l { margin: 8px 0 0; font-size: 14px; color: var(--ink-muted); }
@@ -863,7 +919,7 @@ main {
 .flow__arrow {
   align-self: center;
   font-size: 18px;
-  color: var(--proj, var(--ink-dim));
+  color: var(--proj-ink, var(--ink-dim));
 }
 
 /* anki-srs representative review-card mock */
@@ -895,7 +951,7 @@ main {
   background: var(--surface);
 }
 .grade--good {
-  color: var(--proj, var(--ink));
+  color: var(--proj-ink, var(--ink));
   border-color: color-mix(in srgb, var(--proj, var(--ink)) 40%, var(--border));
   background: color-mix(in srgb, var(--proj, var(--ink)) 8%, var(--surface));
 }
@@ -1269,15 +1325,24 @@ main {
   .background-page .nav-links,
   .writing-index .nav-links,
   .project-page .nav-links { justify-content: flex-start; margin-left: -8px; }
+  .nav { position: relative; }
+  .nav .theme-toggle { position: absolute; top: 10px; right: var(--gutter); }
   .project-grid { grid-template-columns: minmax(0, 1fr); }
   .home-contact { align-items: flex-start; }
 }
 
 .project-wordmark { display: inline-flex; align-items: center; gap: 12px; }
-.project-wordmark img { flex: none; }
+.project-wordmark img, .project-wordmark svg { flex: none; }
+/* Inlined rather than an <img> so the bracket ink can follow the page theme, including the manual toggle. */
+.afterbar-mark__frame { stroke: #202b3c; }
+:root[data-theme="dark"] .afterbar-mark__frame { stroke: #c9d1dc; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .afterbar-mark__frame { stroke: #c9d1dc; }
+}
 .project-hero h1.project-wordmark { gap: 20px; }
 .project-hero > p.project-kind { font-size: 13px; margin: 0 0 12px; }
 @media (max-width: 600px) {
   .project-hero h1.project-wordmark { gap: 12px; }
-  .project-hero h1.project-wordmark img { width: 44px; height: 44px; }
+  .project-hero h1.project-wordmark img,
+  .project-hero h1.project-wordmark svg { width: 44px; height: 44px; }
 }

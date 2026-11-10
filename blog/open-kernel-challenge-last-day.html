@@ -29,6 +29,10 @@
   --good: #2E7D5B;
   --bad: #B8322A;
   --table-head: #E7EBE5;
+  --key: #0F4D92;
+  --alt: #42949E;
+  --neutral-fill: #CFCECE;
+  --contrast-fill: #E9A6A1;
   color-scheme: light;
 }
 @media (prefers-color-scheme: dark) {
@@ -50,6 +54,10 @@
     --good: #5CC196;
     --bad: #F07167;
     --table-head: #222A35;
+    --key: #6FA8E8;
+    --alt: #5CC4CC;
+    --neutral-fill: #4A5463;
+    --contrast-fill: #9C4A45;
     color-scheme: dark;
   }
 }
@@ -71,6 +79,10 @@
   --good: #5CC196;
   --bad: #F07167;
   --table-head: #222A35;
+  --key: #6FA8E8;
+  --alt: #5CC4CC;
+  --neutral-fill: #4A5463;
+  --contrast-fill: #9C4A45;
   color-scheme: dark;
 }
 *, *::before, *::after { box-sizing: border-box; }
@@ -202,6 +214,15 @@ figure.card .source { color: var(--muted); font-size: 14px; margin: 8px 0 0; max
 .chart-scroll .fill-dot { fill: var(--dot); }
 .chart-scroll .fill-good { fill: var(--good); }
 .chart-scroll .fill-bad { fill: var(--bad); }
+.chart-scroll .tkey { fill: var(--key); }
+.chart-scroll .tacc { fill: var(--accent-ink); font-weight: 700; }
+.chart-scroll .bar-key { fill: var(--key); stroke: var(--ink); stroke-width: 1.5; }
+.chart-scroll .bar-neutral { fill: var(--neutral-fill); stroke: var(--ink); stroke-width: 1.5; }
+.chart-scroll .bar-contrast { fill: var(--contrast-fill); stroke: var(--ink); stroke-width: 1.5; }
+.chart-scroll .hatch { stroke: var(--ink); stroke-width: 1.2; }
+.chart-scroll .dot-key { fill: var(--key); stroke: var(--key); stroke-width: 2; }
+.chart-scroll .dot-alt { fill: var(--alt); stroke: var(--alt); stroke-width: 2; }
+.chart-scroll .hollow { fill: var(--surface); }
 .table-wrap { overflow-x: auto; margin: 14px 0 20px; }
 table { border-collapse: collapse; width: 100%; font-size: 15px; }
 th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -468,13 +489,16 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
     <figcaption>Most of the speedup came early; the last day added 2.3% and about 150 places</figcaption>
     <p class="sub">Public row on the decode-layer board, speedup over SGLang (x)</p>
     <div class="chart-scroll" data-start="end">
-      <svg viewBox="0 66 760 262" role="img" aria-label="Line chart of the public row's speedup over SGLang from Oct 28 to Nov 4: 1.40x on Oct 28, 2.13x and rank 388 on Nov 1, 2.23x and rank 308 on the morning of Nov 4, and 2.28x and rank 146 at 19:07 on Nov 4" font-size="12">
+      <svg viewBox="0 66 760 262" role="img" aria-label="Line chart of the public row's speedup over SGLang from Oct 28 to Nov 4: 1.40x on Oct 28, 2.13x and rank 388 on Nov 1, 2.23x and rank 308 on the morning of Nov 4, and 2.28x and rank 146 at 19:07 on Nov 4. The last ten hours are highlighted." font-size="12">
+        <rect x="651.5" y="86" width="32.6" height="214" style="fill: var(--accent); opacity: 0.16"/>
         <g>
-          <line class="grid" x1="64" x2="700" y1="280.91" y2="280.91"/><text class="t2" x="56" y="284.91" text-anchor="end">1.4</text>
-          <line class="grid" x1="64" x2="700" y1="242.73" y2="242.73"/><text class="t2" x="56" y="246.73" text-anchor="end">1.6</text>
-          <line class="grid" x1="64" x2="700" y1="204.55" y2="204.55"/><text class="t2" x="56" y="208.55" text-anchor="end">1.8</text>
-          <line class="grid" x1="64" x2="700" y1="166.36" y2="166.36"/><text class="t2" x="56" y="170.36" text-anchor="end">2.0</text>
-          <line class="grid" x1="64" x2="700" y1="128.18" y2="128.18"/><text class="t2" x="56" y="132.18" text-anchor="end">2.2</text>
+          <line class="axis" x1="64" x2="64" y1="86" y2="300"/>
+          <line class="axis" x1="58" x2="64" y1="280.91" y2="280.91"/><text class="t2" x="52" y="284.91" text-anchor="end">1.4</text>
+          <line class="axis" x1="58" x2="64" y1="242.73" y2="242.73"/><text class="t2" x="52" y="246.73" text-anchor="end">1.6</text>
+          <line class="axis" x1="58" x2="64" y1="204.55" y2="204.55"/><text class="t2" x="52" y="208.55" text-anchor="end">1.8</text>
+          <line class="axis" x1="58" x2="64" y1="166.37" y2="166.37"/><text class="t2" x="52" y="170.37" text-anchor="end">2.0</text>
+          <line class="axis" x1="58" x2="64" y1="128.19" y2="128.19"/><text class="t2" x="52" y="132.19" text-anchor="end">2.2</text>
+          <line class="axis" x1="58" x2="64" y1="90.01" y2="90.01"/><text class="t2" x="52" y="94.01" text-anchor="end">2.4</text>
         </g>
         <g text-anchor="middle">
           <line class="axis" x1="64" x2="700" y1="300" y2="300"/>
@@ -488,23 +512,24 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
           <text class="t2" x="620.5" y="318">Nov 4</text>
           <text class="t2" x="700" y="318">Nov 5</text>
         </g>
-        <g style="fill: var(--chart); stroke: var(--chart)">
-          <path d="M103.75,280.34 L421.75,142.31 L560.08,133.72 L614.14,127.61 L623.68,125.32 L627.66,124.55 L651.5,122.65 L684.1,112.91" fill="none" stroke-width="2"/>
-          <circle cx="103.75" cy="280.34" r="4"><title>Oct 28: 1.403x</title></circle>
-          <circle cx="421.75" cy="142.31" r="4"><title>Nov 1: 2.126x, rank 388</title></circle>
-          <circle cx="560.08" cy="133.72" r="4"><title>Nov 3 05:40: 2.171x, rank 369</title></circle>
-          <circle cx="614.14" cy="127.61" r="4"><title>Nov 3 22:05: 2.203x, rank 353</title></circle>
-          <circle cx="623.68" cy="125.32" r="4"><title>Nov 4 00:55: 2.215x, rank 322</title></circle>
-          <circle cx="627.66" cy="124.55" r="4"><title>Nov 4 02:05: 2.219x, rank 311</title></circle>
-          <circle cx="651.5" cy="122.65" r="4"><title>Nov 4 09:20: 2.229x, rank 308</title></circle>
-          <circle cx="684.1" cy="112.91" r="4"><title>Nov 4 19:07: 2.280x, rank 146</title></circle>
+        <path d="M103.75,280.34 L421.75,142.31 L560.08,133.72 L614.14,127.61 L623.68,125.32 L627.66,124.55 L651.5,122.65" fill="none" style="stroke: var(--key)" stroke-width="2.5"/>
+        <path d="M651.5,122.65 L684.1,112.91" fill="none" style="stroke: var(--accent)" stroke-width="3"/>
+        <g style="fill: var(--key)">
+          <circle cx="103.75" cy="280.34" r="4.5"><title>Oct 28: 1.403x</title></circle>
+          <circle cx="421.75" cy="142.31" r="4.5"><title>Nov 1: 2.126x, rank 388</title></circle>
+          <circle cx="560.08" cy="133.72" r="4.5"><title>Nov 3 05:40: 2.171x, rank 369</title></circle>
+          <circle cx="614.14" cy="127.61" r="4.5"><title>Nov 3 22:05: 2.203x, rank 353</title></circle>
+          <circle cx="623.68" cy="125.32" r="4.5"><title>Nov 4 00:55: 2.215x, rank 322</title></circle>
+          <circle cx="627.66" cy="124.55" r="4.5"><title>Nov 4 02:05: 2.219x, rank 311</title></circle>
+          <circle cx="651.5" cy="122.65" r="4.5"><title>Nov 4 09:20: 2.229x, rank 308</title></circle>
         </g>
+        <circle cx="684.1" cy="112.91" r="5.5" style="fill: var(--accent); stroke: var(--ink)" stroke-width="1.2"><title>Nov 4 19:07: 2.280x, rank 146</title></circle>
         <g text-anchor="end">
           <text class="t1" x="107.75" y="262.34">Oct 28: 1.40x</text>
           <text class="t1" x="413.75" y="130.31">Nov 1: 2.13x, rank 388</text>
-          <text class="t1" x="643.5" y="112.65">Nov 4 09:20: 2.23x, rank 308</text>
+          <text class="t1" x="643.5" y="110.65">Nov 4 09:20: 2.23x, rank 308</text>
           <text class="t1" x="676.1" y="80.91">Nov 4 19:07: 2.28x, rank 146</text>
-          <text class="t2" x="676.1" y="96.91">+2.3% in ten hours</text>
+          <text class="tacc" x="676.1" y="96.91">+2.3% in ten hours</text>
         </g>
       </svg>
     </div>
@@ -869,34 +894,34 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
     <div class="chart-scroll" tabindex="0" role="region" aria-label="Bar chart comparing change sizes with the judge's spread (scrolls sideways on small screens)">
       <svg viewBox="0 12 760 318" role="img" aria-labelledby="noise-title noise-desc" font-size="13">
         <title id="noise-title">A typical change compared with the judge's spread and the gaps that mattered</title>
-        <desc id="noise-desc">Horizontal bars on a shared scale from 0 to 3.5 percent of layer time. A typical single change is worth 0.1 to 0.5 percent. The judge's run-to-run spread for one fixed file is about 2.4 percent, so a typical change sits well inside it. The whole last-day gain, from 2.229x to 2.280x, is 2.3 percent. The gap from rank 308 to rank 100 on the morning of November 4, 2.229x against 2.297x, is about 3 percent.</desc>
-        <defs><marker id="noise-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="arrowhead" d="M0 0L10 5L0 10Z"/></marker></defs>
+        <desc id="noise-desc">Horizontal bars on a shared scale from 0 to 3.5 percent of layer time. A typical single change is worth 0.1 to 0.5 percent. The judge's run-to-run spread for one fixed file is about 2.4 percent, so a typical change sits well inside it. The whole last-day gain, from 2.229x to 2.280x, is 2.3 percent. The gap from rank 308 to rank 100 on the morning of November 4, 2.229x against 2.297x, is about 3 percent. A dashed line at 2.4 percent runs through every bar.</desc>
+        <defs>
+          <pattern id="noise-hatch" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line class="hatch" x1="0" y1="0" x2="0" y2="7"/></pattern>
+        </defs>
 
-        <g>
-          <line class="grid" x1="310" x2="310" y1="28" y2="272"/>
-          <line class="grid" x1="380" x2="380" y1="28" y2="272"/>
-          <line class="grid" x1="450" x2="450" y1="28" y2="272"/>
-          <line class="grid" x1="520" x2="520" y1="28" y2="272"/>
-          <line class="grid" x1="590" x2="590" y1="28" y2="272"/>
-          <line class="grid" x1="660" x2="660" y1="28" y2="272"/>
-          <line class="grid" x1="730" x2="730" y1="28" y2="272"/>
-        </g>
         <line class="axis" x1="240" x2="240" y1="28" y2="272"/>
         <line class="axis" x1="240" x2="730" y1="272" y2="272"/>
-        <g text-anchor="middle">
-          <text class="t2" x="240" y="292">0%</text>
-          <text class="t2" x="310" y="292">0.5%</text>
-          <text class="t2" x="380" y="292">1%</text>
-          <text class="t2" x="450" y="292">1.5%</text>
-          <text class="t2" x="520" y="292">2%</text>
-          <text class="t2" x="590" y="292">2.5%</text>
-          <text class="t2" x="660" y="292">3%</text>
-          <text class="t2" x="730" y="292">3.5%</text>
-          <text class="t2" x="485" y="318">share of layer time</text>
+        <g>
+          <line class="axis" x1="240" x2="240" y1="272" y2="278"/>
+          <line class="axis" x1="310" x2="310" y1="272" y2="278"/>
+          <line class="axis" x1="380" x2="380" y1="272" y2="278"/>
+          <line class="axis" x1="450" x2="450" y1="272" y2="278"/>
+          <line class="axis" x1="520" x2="520" y1="272" y2="278"/>
+          <line class="axis" x1="590" x2="590" y1="272" y2="278"/>
+          <line class="axis" x1="660" x2="660" y1="272" y2="278"/>
+          <line class="axis" x1="730" x2="730" y1="272" y2="278"/>
         </g>
-
-        <line class="axis" x1="576" x2="576" y1="28" y2="112" stroke-dasharray="5 4"/>
-        <text class="t2" x="584" y="69">judge spread</text>
+        <g text-anchor="middle">
+          <text class="t2" x="240" y="294">0%</text>
+          <text class="t2" x="310" y="294">0.5%</text>
+          <text class="t2" x="380" y="294">1%</text>
+          <text class="t2" x="450" y="294">1.5%</text>
+          <text class="t2" x="520" y="294">2%</text>
+          <text class="t2" x="590" y="294">2.5%</text>
+          <text class="t2" x="660" y="294">3%</text>
+          <text class="t2" x="730" y="294">3.5%</text>
+          <text class="t2" x="485" y="320">share of layer time</text>
+        </g>
 
         <g text-anchor="end">
           <text class="t1" x="226" y="62">Typical single change</text>
@@ -909,14 +934,18 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
           <text class="t2" x="226" y="259" font-size="12">2.229x vs 2.297x, Nov 4 morning</text>
         </g>
 
-        <rect class="fill-chart" x="254" y="52" width="56" height="24" rx="3"/>
-        <rect class="fill-dot" x="240" y="112" width="336" height="24" rx="3"/>
-        <rect class="fill-chart" x="240" y="172" width="322" height="24" rx="3"/>
-        <rect class="fill-chart" x="240" y="232" width="420" height="24" rx="3"/>
+        <rect class="bar-key" x="254" y="52" width="56" height="24" rx="2"/>
+        <rect class="bar-neutral" x="240" y="112" width="336" height="24" rx="2"/>
+        <rect x="240" y="112" width="336" height="24" rx="2" fill="url(#noise-hatch)"/>
+        <rect class="bar-key" x="240" y="172" width="322" height="24" rx="2"/>
+        <rect class="bar-contrast" x="240" y="232" width="420" height="24" rx="2"/>
+
+        <line class="axis" x1="576" x2="576" y1="28" y2="272" stroke-dasharray="5 4"/>
+        <text class="t2" x="582" y="40">judge spread ends</text>
 
         <text class="t1" x="318" y="69">0.1 to 0.5%</text>
         <text class="t1" x="584" y="129">about 2.4%</text>
-        <text class="t1" x="570" y="189">2.3%</text>
+        <text class="t1" x="584" y="189">2.3%</text>
         <text class="t1" x="668" y="249">about 3%</text>
       </svg>
     </div>
@@ -926,45 +955,47 @@ footer { color: var(--muted); font-size: 14px; margin-top: 72px; padding-top: 20
     <figcaption>Each file spreads over about 240 us on the judge; the two files differ by about 24 us</figcaption>
     <p class="sub">Judge results for the same bytes, weighted layer time in us (lower is faster). Filled: private check. Hollow: public run.</p>
     <div class="chart-scroll">
-      <svg viewBox="0 80 760 250" role="img" aria-label="Strip chart of judge results. EAT v4: 9 results from 9,922.9 to 10,160.8 us, mean 10,054.0. EAT v7: 8 results from 9,949.3 to 10,101.3 us, mean 10,029.6. The board row is 9,922.9 us." font-size="12">
+      <svg viewBox="0 80 760 266" role="img" aria-label="Strip chart of judge results. EAT v4: 9 results from 9,922.9 to 10,160.8 us, mean 10,054.0. EAT v7: 8 results from 9,949.3 to 10,101.3 us, mean 10,029.6. The board row is 9,922.9 us." font-size="12">
+        <line class="axis" x1="120" x2="720" y1="300" y2="300"/>
         <g text-anchor="middle">
-          <line class="grid" x1="120" x2="120" y1="100" y2="300"/><text class="t2" x="120" y="320">9,900</text>
-          <line class="grid" x1="220" x2="220" y1="100" y2="300"/><text class="t2" x="220" y="320">9,950</text>
-          <line class="grid" x1="320" x2="320" y1="100" y2="300"/><text class="t2" x="320" y="320">10,000</text>
-          <line class="grid" x1="420" x2="420" y1="100" y2="300"/><text class="t2" x="420" y="320">10,050</text>
-          <line class="grid" x1="520" x2="520" y1="100" y2="300"/><text class="t2" x="520" y="320">10,100</text>
-          <line class="grid" x1="620" x2="620" y1="100" y2="300"/><text class="t2" x="620" y="320">10,150</text>
-          <line class="grid" x1="720" x2="720" y1="100" y2="300"/><text class="t2" x="720" y="320">10,200</text>
+          <line class="axis" x1="120" x2="120" y1="300" y2="306"/><text class="t2" x="120" y="322">9,900</text>
+          <line class="axis" x1="220" x2="220" y1="300" y2="306"/><text class="t2" x="220" y="322">9,950</text>
+          <line class="axis" x1="320" x2="320" y1="300" y2="306"/><text class="t2" x="320" y="322">10,000</text>
+          <line class="axis" x1="420" x2="420" y1="300" y2="306"/><text class="t2" x="420" y="322">10,050</text>
+          <line class="axis" x1="520" x2="520" y1="300" y2="306"/><text class="t2" x="520" y="322">10,100</text>
+          <line class="axis" x1="620" x2="620" y1="300" y2="306"/><text class="t2" x="620" y="322">10,150</text>
+          <line class="axis" x1="720" x2="720" y1="300" y2="306"/><text class="t2" x="720" y="322">10,200</text>
+          <text class="t2" x="420" y="342">weighted layer time (us), lower is faster</text>
         </g>
-        <line class="axis" x1="165.8" x2="165.8" y1="92" y2="300" stroke-dasharray="4 3"/>
-        <text class="t2" x="171.8" y="96">board row 9,922.9 us</text>
-        <text class="t1" x="20" y="154">EAT v4</text><text class="t2" x="20" y="170">9 results</text>
+        <line x1="165.8" x2="165.8" y1="92" y2="300" stroke-dasharray="4 3" style="stroke: var(--accent)" stroke-width="1.6"/>
+        <text class="tacc" x="171.8" y="96">board row 9,922.9 us</text>
+        <text class="tkey" x="20" y="154" font-weight="700">EAT v4</text><text class="t2" x="20" y="170">9 results</text>
         <line class="grid" x1="165.8" x2="641.6" y1="150" y2="150" stroke-width="2"/>
-        <line x1="428.02" x2="428.02" y1="134" y2="166" stroke="var(--chart)" stroke-width="3"/>
-        <text class="tc" x="428.02" y="128" text-anchor="middle">mean 10,054.0</text>
-        <text class="t1" x="20" y="244">EAT v7</text><text class="t2" x="20" y="260">8 results</text>
+        <text style="fill: var(--alt)" x="20" y="244" font-weight="700">EAT v7</text><text class="t2" x="20" y="260">8 results</text>
         <line class="grid" x1="218.6" x2="522.6" y1="240" y2="240" stroke-width="2"/>
-        <line x1="379.1" x2="379.1" y1="224" y2="256" stroke="var(--chart)" stroke-width="3"/>
-        <text class="tc" x="379.1" y="218" text-anchor="middle">mean 10,029.6</text>
-        <g style="stroke: var(--dot)" stroke-width="2" r="6">
-          <circle cx="438.2" cy="150" r="6" style="fill: var(--dot)"><title>EAT v4 check: 10,059.1 us</title></circle>
-          <circle cx="445.2" cy="150" r="6" style="fill: var(--dot)"><title>EAT v4 check: 10,062.6 us</title></circle>
-          <circle cx="542.8" cy="150" r="6" style="fill: var(--dot)"><title>EAT v4 check: 10,111.4 us</title></circle>
-          <circle cx="276.4" cy="150" r="6" style="fill: var(--dot)"><title>EAT v4 check: 9,978.2 us</title></circle>
-          <circle cx="281.4" cy="150" r="6" style="fill: var(--dot)"><title>EAT v4 check: 9,980.7 us</title></circle>
-          <circle cx="578.4" cy="150" r="6" style="fill: var(--dot)"><title>EAT v4 check: 10,129.2 us</title></circle>
-          <circle cx="641.6" cy="150" r="6" fill="none"><title>EAT v4 public run: 10,160.8 us</title></circle>
-          <circle cx="165.8" cy="150" r="6" fill="none"><title>EAT v4 public run: 9,922.9 us</title></circle>
-          <circle cx="482.4" cy="150" r="6" fill="none"><title>EAT v4 public run: 10,081.2 us</title></circle>
-          <circle cx="486.8" cy="240" r="6" style="fill: var(--dot)"><title>EAT v7 check: 10,083.4 us</title></circle>
-          <circle cx="380.2" cy="240" r="6" style="fill: var(--dot)"><title>EAT v7 check: 10,030.1 us</title></circle>
-          <circle cx="522.6" cy="240" r="6" style="fill: var(--dot)"><title>EAT v7 check: 10,101.3 us</title></circle>
-          <circle cx="218.6" cy="240" r="6" style="fill: var(--dot)"><title>EAT v7 check: 9,949.3 us</title></circle>
-          <circle cx="347.6" cy="240" r="6" style="fill: var(--dot)"><title>EAT v7 check: 10,013.8 us</title></circle>
-          <circle cx="247.4" cy="240" r="6" fill="none"><title>EAT v7 public run: 9,963.7 us</title></circle>
-          <circle cx="509.4" cy="240" r="6" fill="none"><title>EAT v7 public run: 10,094.7 us</title></circle>
-          <circle cx="320.2" cy="240" r="6" fill="none"><title>EAT v7 public run: 10,000.1 us</title></circle>
+        <g>
+          <circle class="dot-key hollow" cx="165.8" cy="150" r="6"><title>EAT v4 public run: 9,922.9 us</title></circle>
+          <circle class="dot-key" cx="276.4" cy="144" r="6"><title>EAT v4 check: 9,978.2 us</title></circle>
+          <circle class="dot-key" cx="281.4" cy="156" r="6"><title>EAT v4 check: 9,980.7 us</title></circle>
+          <circle class="dot-key" cx="438.2" cy="144" r="6"><title>EAT v4 check: 10,059.1 us</title></circle>
+          <circle class="dot-key" cx="445.2" cy="156" r="6"><title>EAT v4 check: 10,062.6 us</title></circle>
+          <circle class="dot-key hollow" cx="482.4" cy="150" r="6"><title>EAT v4 public run: 10,081.2 us</title></circle>
+          <circle class="dot-key" cx="542.8" cy="150" r="6"><title>EAT v4 check: 10,111.4 us</title></circle>
+          <circle class="dot-key" cx="578.4" cy="150" r="6"><title>EAT v4 check: 10,129.2 us</title></circle>
+          <circle class="dot-key hollow" cx="641.6" cy="150" r="6"><title>EAT v4 public run: 10,160.8 us</title></circle>
+          <circle class="dot-alt" cx="218.6" cy="240" r="6"><title>EAT v7 check: 9,949.3 us</title></circle>
+          <circle class="dot-alt hollow" cx="247.4" cy="240" r="6"><title>EAT v7 public run: 9,963.7 us</title></circle>
+          <circle class="dot-alt hollow" cx="320.2" cy="240" r="6"><title>EAT v7 public run: 10,000.1 us</title></circle>
+          <circle class="dot-alt" cx="347.6" cy="240" r="6"><title>EAT v7 check: 10,013.8 us</title></circle>
+          <circle class="dot-alt" cx="380.2" cy="240" r="6"><title>EAT v7 check: 10,030.1 us</title></circle>
+          <circle class="dot-alt" cx="486.8" cy="240" r="6"><title>EAT v7 check: 10,083.4 us</title></circle>
+          <circle class="dot-alt hollow" cx="509.4" cy="234" r="6"><title>EAT v7 public run: 10,094.7 us</title></circle>
+          <circle class="dot-alt" cx="522.6" cy="246" r="6"><title>EAT v7 check: 10,101.3 us</title></circle>
         </g>
+        <line x1="428.0" x2="428.0" y1="132" y2="168" style="stroke: var(--ink)" stroke-width="2.5"/>
+        <text class="t1" x="428.0" y="126" text-anchor="middle">mean 10,054.0</text>
+        <line x1="379.2" x2="379.2" y1="222" y2="258" style="stroke: var(--ink)" stroke-width="2.5"/>
+        <text class="t1" x="379.2" y="216" text-anchor="middle">mean 10,029.6</text>
       </svg>
     </div>
     <p class="source">Gap between the means: 24.5 us. Spread within EAT v4: 237.9 us. Source: okc judge results (checks and public runs), Nov 4, 2026.</p>
